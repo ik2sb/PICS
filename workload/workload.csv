@@ -1,0 +1,51 @@
+# Each line consists of five elements
+# submit_internval, job_duration, job_deadline, input_file, output_file
+# 	- submit_interval	: job generation simulation clock (e.g. 100 means this job will be generated after 100 sim clock from previous one)
+# 	- job_duration		: this is standard job duration - this value will be recalcuated based on each VM's cpu performance
+# 	- job_deadline		: this is deadline for the job
+# 	- input_file		: input file for job. this has prefix such as None, IC or OC 
+# 						  NONE_0 means no input file
+# 						  IC means input file from inside clouds
+# 						  OC means input file from outside of clouds.	 
+# 	- output_file		: outpuf file for job, this also has prefix such as None, IC or OC
+# 						  NONE_0 means no input file
+# 						  IC means output file will be transfered to storage space inside the cloud (this causes addition storage cost)
+# 						  OC means output file will be trasnfered to storage space outside of the cloud 
+100,200,300,IC_524288,IC_524288
+100,200,600,OC_524288,IC_524288
+100,200,900,OC_524288,IC_524288
+100,200,550,OC_524288,IC_524288
+100,200,200,OC_524288,IC_524288
+100,200,200,OC_524288,IC_524288
+100,200,220,OC_524288,IC_524288
+100,200,220,OC_524288,IC_524288
+100,200,320,OC_524288,IC_524288
+100,200,320,OC_524288,IC_524288
+100,200,380,OC_524288,IC_524288
+100,200,380,OC_524288,IC_524288
+100,200,380,OC_524288,IC_524288
+100,200,220,OC_524288,IC_524288
+100,200,220,OC_524288,IC_524288
+100,200,320,IC_524288,IC_524288
+100,200,520,IC_524288,IC_524288
+100,200,580,IC_524288,IC_524288
+100,200,980,IC_524288,IC_524288
+100,200,980,IC_524288,IC_524288
+#100,200,5000,IC_524288,IC_524288
+#1,200,5000,IC_524288,OC_524288
+#1,200,5000,IC_524288,OC_524288
+#1,200,5000,IC_524288,OC_524288
+#1,200,5000,IC_524288,OC_524288
+#1,200,5000,OC_524288,OC_524288
+#1,200,5000,OC_524288,NONE_0
+#1,200,5000,NONE_0,NONE_0
+#100,200,1950,OC_524288,OC_524288
+#1,200,400,OC_102400,OC_102400
+#1,200,500,OC_102400,OC_102400
+#1,200,600,IC_524288,IC_524288
+#1,200,600,NONE_0,NONE_0
+#472,200,500
+#322,200,500
+#360,200,1000
+#120,200,1000
+#360,200,1000

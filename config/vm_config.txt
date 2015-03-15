@@ -1,0 +1,34 @@
+# VM Type Configuration
+# For CPU_FACTOR and NET_FACTOR: smaller values are better!!! 
+#	for CPU_FACTOR, cpu duration will be calculated by standard_job_duration * cpu_factor 
+#		e.g. If standard duration is 100 and cpu_factor is 0.2 ==> actual cpu duration (runtime) = 100 * 0.2 = 20
+#	for NET_FACTOR, file trasfer time will be calculated by stadard data transmission rate * net_factor
+#		e.g. If standard data transmission rate is 10M/S, File Size is 100M, net_factor is 0.5, then file transfer time = (file size/std data transmission) * net_factor
+#			--> (100/10) * 0.5 = 5sec 
+NO_OF_VM_TYPES = 5
+
+VM1_TYPE_NAME=t2.micro
+VM1_UNIT_PRICE=0.1
+VM1_CPU_FACTOR=2.0
+VM1_NET_FACTOR=2.1
+
+VM2_TYPE_NAME=t2.small
+VM2_UNIT_PRICE=0.2
+VM2_CPU_FACTOR=1.5
+VM2_NET_FACTOR=1.6
+
+VM3_TYPE_NAME=m3.medium
+VM3_UNIT_PRICE=0.4
+VM3_CPU_FACTOR=1.0
+VM3_NET_FACTOR=1.1
+
+VM4_TYPE_NAME=m3.large
+VM4_UNIT_PRICE=0.8
+VM4_CPU_FACTOR=0.5
+VM4_NET_FACTOR=0.6
+
+VM5_TYPE_NAME=m3.xlarge
+VM5_UNIT_PRICE=1.6
+VM5_CPU_FACTOR=0.3
+VM5_NET_FACTOR=0.4
+

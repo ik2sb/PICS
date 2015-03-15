@@ -1,0 +1,131 @@
+# VM SD POLICIES
+# List of Scale Down (SD) Policies
+#   1.  SD-IM 				: Immediate Scaling Down
+#   2.  SD-HR 				: Based on Pricing Model (AWS) -> Hourly Scaling Down
+#   3.  SD-MN 				: Based on Pricing Model (Azure) -> Minutely Scaling Down
+#   4.  SD-SL 				: Startup Lag-based Scale Down 
+#   5.  SD-JAT-MEAN 		: Mean Job Arrival Rate-based Scale Down
+#   6.  SD-JAT-MAX 			: Maximum Job Arrival Rate-based Scale Down
+#   7.  SD-JAT-MEAN-RECENT	: Mean Recent Job Arrival Rate-based Scale Down (This is identical to SMA (Simple Moving Average))
+#   8.  SD-JAT-MAX-RECENT	: Max Recent Job Arrival Rate-based Scale Down 
+#   9.  SD-JAT-SLR			: Simple Linear Regression (JAT)-based Scale Down
+#   10. SD-JAT-2PR			: Quadratic (2 degree) Regression (JAT)-based Scale Down
+#   11. SD-JAT-3PR			: Cubic (3 degree) Regression (JAT)-based Scale Down
+#   12. SD-JAT-LLR			: Local Linear Regression (JAT)-based Scale Down
+#   13. SD-JAT-L2PR			: Local Quadratic (2 degree) Regression (JAT)-based Scale Down
+#   14. SD-JAT-L3PR			: Local Cubic (3 degree) Regression (JAT)-based Scale Down
+#   15. SD-JAT-WMA			: Weighted Moving Average (JAT)-based Scale Down
+#	16. SD-JAT-ES			: Exponential Smoothong (JAT)-based Scale Down
+#	17. SD-JAT-HWDES		: Holt-Winters Double Exponential Smoothing (JAT)-based Scale Down
+#	18. SD-JAT-BRDES		: Brown's Double Exponential Smoothing (JAT)-based Scale Down
+#	19. SD-JAT-AR			: Autoregressive (JAT)-based Scale Down
+#	20. SD-JAT-ARMA			: Autoregressive and Moving Average-based Scale Down
+#	21. SD-JAT-ARIMA		: Autoregressive Integrated Moving Average-based Scale Down  
+
+# To Do List
+#		currently nothing.
+
+VM_SCALE_DOWN_POLICY_NAME=SD-HR
+
+# Policy Unit field is only applicable for Pricing model based Scale Down (e.g. SL-HR and SL-MN)
+VM_SCALE_DOWN_POLICY_UNIT=1
+
+# SD Parameters
+VM_SCALE_DOWN_POLICY_RECENT_SAMPLE_CNT=50
+
+# first param for timeseries
+# alpha for moving average
+# p for AR, ARMA, ARIMA : order of AR
+VM_SCALE_DOWN_POLICY_PARAM1=0.5
+
+# second param for timeseries
+# beta for Holt Winters Double Exponential Smoothing
+# q for ARMA and ARIMA(q <= 3) : order of MA
+VM_SCALE_DOWN_POLICY_PARAM2=2
+
+# second param for timeseries
+# d for ARIMA : order of Integrated
+VM_SCALE_DOWN_POLICY_PARAM3=12
+
+# These MIN/MAX fields are related to predictive methods such as SD-JAT-SLR
+# To prepare wrong prediction results (too short (or negative) or too long wait time)
+VM_SCALE_DOWN_POLICY_MIN_WAIT_TIME=1
+VM_SCALE_DOWN_POLICY_MAX_WAIT_TIME=UNLIMITED
+
+JOB_ASSIGNMENT_POLICY=EDF
+
+MAX_NUM_OF_CONCURRENT_VMS=UNLIMITED
+#JOB_ASSIGNMENT_MAX_RUNNING_VM=7
+
+# Vertical Scaling - Enable: YES, Disable: No
+ENABLE_VERTICAL_SCALING=NO
+# Vertical Scaling Operation: VSCALE-UP, VSCALE-DOWN, VSCALE-BOTH
+# VSCALE-UP:	Only VScale-up (triggered when VM cannot meet deadline for queued jobs)
+# VSCALE-DOWN:	Only VScale-down (triggered  when VM meet deadline -- find most suitable one for queued jobs (e.g. cheapest one with deadline satisfaction)
+# VSCALE-BOTH:  Both VScale-up/down
+VERTICAL_SCALING_OPERATION=VSCALE-BOTH
+
+# PRICING POLICY
+# VM_UNIT_PRICE=0.1 -- this is disabled
+VM_BILLING_TIME_UNIT=BTU_HOUR
+VM_BILLING_TIME_PERIOD=1
+
+# STARTUP LAG 50-80
+MIN_STARTUP_LAG = 185
+MAX_STARTUP_LAG = 210
+
+# VM SELECTION - one of (VM-SEL-COST, VM-SEL-PERF, VM-SEL-COSTPERF)
+VM_SELECTION_METHOD=VM-SEL-COST
+
+#####################################################
+# Configurations for Storage Features
+#####################################################
+
+# Maximum Volumn of Storage System: UNIT Mega Bytes
+#MAX_CAPACITY_OF_STORAGE=1048576
+#MAX_CAPACITY_OF_STORAGE=5000
+#MAX_CAPACITY_OF_STORAGE=10
+MAX_CAPACITY_OF_STORAGE=10240000
+# Maximnum Number of Storage Container: this is reserved configuration item -- not used at this point
+MAX_NUM_OF_STORAGE_CONTAINER=100
+
+# Cloud Storage Pricing - per / GB / Month
+STORAGE_UNIT_COST=0.01
+# STORAGE_BILLING_TIME_UNIT should be greater than 0. e.g. 1: 1 sec. 60: 1 min. 3600: 1 hour, 86400: 1 day, 2592000
+STORAGE_BILLING_TIME_UNIT=1
+
+#####################################################
+# Configurations for Data Transfer
+#	Perf Unit  : MB/s
+#   Cost Unit  : $ per GByte
+#####################################################
+PERF_DATA_TRANSFER_CLOUD=3.0
+PERF_DATA_TRANSFER_IN=2.0
+PERF_DATA_TRANSFER_OUT=1.0
+
+COST_DATA_TRANSFER_CLOUD=0.01
+COST_DATA_TRANSFER_IN=0.02
+COST_DATA_TRANSFER_OUT=0.03
+
+#####################################################
+# Configurations for Job/Application Failure Model
+#	* PROB_JOB_FAILURE: 0.0 <= prob <= 1.0
+#	* JOB_FAILURE_POLICY
+#		a) JF-POLICY-01: ignore job
+#		c) JF-POLICY-02: re-execute the job
+#		c) JF-POLICY-03: move the erroneous job to end of the queue
+#		d) JF-POLICY-04: find any machine (running or new) to match the errorneous job deadline
+#####################################################
+PROB_JOB_FAILURE=0.0
+JOB_FAILURE_POLICY=JF-POLICY-02
+
+# WORKLOAD INFOS
+WORK_LOAD_FILE=workload.csv
+WORK_LOAD_TYPE=POISSON
+
+# VM Infos and VM Config File Path
+VM_CONFIG_FILE=vm_config.txt
+
+# SIM OPERATION CONFIG
+SIM_TRACE_INTERVAL = 60
+
