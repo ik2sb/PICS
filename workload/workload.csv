@@ -3,11 +3,11 @@
 # 	- submit_interval	: job generation simulation clock (e.g. 100 means this job will be generated after 100 sim clock from previous one)
 # 	- job_duration		: this is standard job duration - this value will be recalcuated based on each VM's cpu performance
 # 	- job_deadline		: this is deadline for the job
-# 	- input_file		: input file for job. this has prefix such as None, IC or OC 
+# 	- input_data		: input file for job. this has prefix such as None, IC or OC 
 # 						  NONE_0 means no input file
 # 						  IC means input file from inside clouds
 # 						  OC means input file from outside of clouds.	 
-# 	- output_file		: outpuf file for job, this also has prefix such as None, IC or OC
+# 	- output_data		: outpuf file for job, this also has prefix such as None, IC or OC
 # 						  NONE_0 means no input file
 # 						  IC means output file will be transfered to storage space inside the cloud (this causes addition storage cost)
 # 						  OC means output file will be trasnfered to storage space outside of the cloud 
