@@ -246,15 +246,21 @@ def load_sim_config (sim_conf_obj):
 
 def check_workload_data (sim_conf_obj):
 
-    if not os.path.isfile(sim_conf_obj.workload_file):
+    workload_data_file = sim_conf_obj.workload_file
+    if not os.path.isfile(workload_data_file):
         print "- [ERROR] Workload (%s) Data not found!" % workload_data_file
         exit()
 
     print "* Check Workload Data - Done"
 
 def load_vm_types (sim_conf_obj):
+
+    vm_config_file = sim_conf_obj.vm_config_file_path
+    if not os.path.isfile(vm_config_file):
+        print "- [ERROR] VM Config File (%s) not found!" % vm_config_file
+        exit()
     
-    with open(sim_conf_obj.vm_config_file_path,'r') as f:
+    with open(vm_config_file,'r') as f:
 
         for l in f.readlines():
             if l.startswith('#') or len(l) <= 1:

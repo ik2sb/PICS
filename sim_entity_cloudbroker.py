@@ -62,11 +62,19 @@ g_Startup_Lags_CV = Condition()
 def set_log (path):
     logger = logging.getLogger('cloud_broker')
     log_file = path + '/[' + str(g_my_block_id) + ']-cloud_broker.log'
+
+    # for log file write...
     hdlr = logging.FileHandler(log_file)
-    #hdlr = logging.FileHandler(path + '/cloud_broker.log')
     formatter = logging.Formatter('%(message)s')
     hdlr.setFormatter(formatter)
     logger.addHandler(hdlr)
+
+    # for stdout...
+    ch = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter('%(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
     logger.setLevel(logging.INFO)
     return logger
 
@@ -319,13 +327,11 @@ def get_detailed_number_of_VM_status ():
         elif vm.status == simgval.gVM_ST_ACTIVE:
             vm_act += 1
         else:
-            print "[Broker__] %s VM (ID:%d) Status (%s) Error in g_Running_VM_Instances" % (str(Global_Curr_Sim_Clock), vm.id, simgval.get_sim_code_str(vm.status))
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  VM Status (%s) Error in g_Running_VM_Instances' % (vm.id, simgval.get_sim_code_str(vm.status)))
-            clib.logwrite_VM_Instance_Lists (g_log_handler, Global_Curr_Sim_Clock, "Error g_Running_VM_Instances", g_Running_VM_Instances)
+            g_log_handler.error('[Broker__] %s VM Status (%s) Error in g_Running_VM_Instances' % (Global_Curr_Sim_Clock, vm.id, simgval.get_sim_code_str(vm.status)))
+            clib.logwrite_VM_Instance_Lists (g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "Error g_Running_VM_Instances", g_Running_VM_Instances)
             clib.sim_exit()
 
     vm_stop = len(g_Stopped_VM_Instances)
-
     return vm_run, vm_stup, vm_act, vm_stop
 
 # this is only for simulation trace...
@@ -387,23 +393,20 @@ def create_new_VM_Instance (vm_type_obj, vscale_victim_id=-1):
     new_vm_uid = simobj.generate_VM_UID()
     new_vm = simobj.VM_Instance (new_vm_uid, "VM-" + str(new_vm_uid), vm_type_obj.vm_type_name, vm_type_obj.vm_type_unit_price, Global_Curr_Sim_Clock)
 
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  VM Created: ID:%d, IID: %s, Type: %s, Price: $%s, Status: %s' % (new_vm.id, new_vm.instance_id, new_vm.type_name, new_vm.unit_price, simgval.get_sim_code_str(new_vm.status)))
+    g_log_handler.info('[Broker__] %s VM Created: ID:%d, IID: %s, Type: %s, Price: $%s, Status: %s' % (Global_Curr_Sim_Clock, new_vm.id, new_vm.instance_id, new_vm.type_name, new_vm.unit_price, simgval.get_sim_code_str(new_vm.status)))
 
     # insert the created VM into running list
     if vscale_victim_id == -1: # which means normal new VM creation
 
         insert_VM_into_Running_VM_Instances (new_vm)
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + '  Insert VM(%d,%s,$%s,%s) into Running VM List' % (new_vm.id, new_vm.type_name, new_vm.unit_price, simgval.get_sim_code_str(new_vm.status)))
-        clib.logwrite_VM_Instance_Lists (g_log_handler, Global_Curr_Sim_Clock, "cloud_broker.Running_VMs", g_Running_VM_Instances)
+        g_log_handler.info('[Broker__] %s Insert VM(%d,%s,$%s,%s) into Running VM List' % (Global_Curr_Sim_Clock, new_vm.id, new_vm.type_name, new_vm.unit_price, simgval.get_sim_code_str(new_vm.status)))
 
     else:   # this means new vm creation for vertical scaling
 
         # set vscale_victim_id --> this points out previous vm id
         simobj.set_VM_vscale_victim_id(new_vm, vscale_victim_id)
-
         insert_VM_into_Temp_VM_Instances (new_vm)
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + '  Insert VM(%d,%s,$%s,%s) into Temp VM List' % (new_vm.id, new_vm.type_name, new_vm.unit_price, simgval.get_sim_code_str(new_vm.status)))
-        clib.logwrite_VM_Instance_Lists (g_log_handler, Global_Curr_Sim_Clock, "cloud_broker.Temp_VMs", g_Temp_VM_Instances)
+        g_log_handler.info('[Broker__] %s Insert VM(%d,%s,$%s,%s) into Temp VM List' % (Global_Curr_Sim_Clock, new_vm.id, new_vm.type_name, new_vm.unit_price, simgval.get_sim_code_str(new_vm.status)))
 
     return new_vm_uid
 
@@ -412,24 +415,24 @@ def insert_VM_into_Running_VM_Instances (vm):
     global g_Running_VM_Instances
     global g_Running_VM_Instances_CV
 
-    curframe = inspect.currentframe()
-    calframe = inspect.getouterframes(curframe, 2)
+    #curframe = inspect.currentframe()
+    #calframe = inspect.getouterframes(curframe, 2)
 
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "  insert_VM_into_Running_VM_Instances")
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tVM INFO  : ID: %d, ST: %s" % (vm.id, simgval.get_sim_code_str(vm.status)))
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tCaller   : %s, %s:%d" % (calframe[1][3], calframe[1][1], calframe[1][2]))
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
-    clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "BEFORE insert_VM_into_Running_VM_Instances", g_Running_VM_Instances)
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "  insert_VM_into_Running_VM_Instances")
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tVM INFO  : ID: %d, ST: %s" % (vm.id, simgval.get_sim_code_str(vm.status)))
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tCaller   : %s, %s:%d" % (calframe[1][3], calframe[1][1], calframe[1][2]))
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+    #clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "BEFORE insert_VM_into_Running_VM_Instances", g_Running_VM_Instances)
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
 
     g_Running_VM_Instances_CV.acquire()
     g_Running_VM_Instances.append(vm)
     g_Running_VM_Instances_CV.notify()
     g_Running_VM_Instances_CV.release()
 
-    clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "AFTER insert_VM_into_Running_VM_Instances", g_Running_VM_Instances)
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+    #clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "AFTER insert_VM_into_Running_VM_Instances", g_Running_VM_Instances)
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
 
 def find_VM_from_Running_VM_Instances (vm_id):
 
@@ -457,25 +460,24 @@ def remove_VM_from_Running_VM_Instances (vm_id):
     for vm in g_Running_VM_Instances:
         if vm.id == vm_id:
 
-            curframe = inspect.currentframe()
-            calframe = inspect.getouterframes(curframe, 2)
+            #curframe = inspect.currentframe()
+            #calframe = inspect.getouterframes(curframe, 2)
 
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + "  remove_VM_from_Running_VM_Instances")
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tVM INFO  : ID: %d" % (vm.id))
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tCaller   : %s, %s:%d" 
-            % (calframe[1][3], calframe[1][1], calframe[1][2]))
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
-            clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "BEFORE remove_VM_from_Running_VM_Instances", g_Running_VM_Instances)
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+            #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+            #g_log_handler.info (str(Global_Curr_Sim_Clock) + "  remove_VM_from_Running_VM_Instances")
+            #g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tVM INFO  : ID: %d" % (vm.id))
+            #g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tCaller   : %s, %s:%d" % (calframe[1][3], calframe[1][1], calframe[1][2]))
+            #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+            #clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "BEFORE remove_VM_from_Running_VM_Instances", g_Running_VM_Instances)
+            #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
 
             g_Running_VM_Instances_CV.acquire()
             g_Running_VM_Instances.remove(vm)
             g_Running_VM_Instances_CV.notify()
             g_Running_VM_Instances_CV.release()
 
-            clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "AFTER remove_VM_from_Running_VM_Instances", g_Running_VM_Instances)
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+            #clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "AFTER remove_VM_from_Running_VM_Instances", g_Running_VM_Instances)
+            #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
 
             return True
 
@@ -486,24 +488,24 @@ def insert_VM_into_Stopped_VM_Instances (vm):
     global g_Stopped_VM_Instances
     global g_Stopped_VM_Instances_CV
 
-    curframe = inspect.currentframe()
-    calframe = inspect.getouterframes(curframe, 2)
+    #curframe = inspect.currentframe()
+    #calframe = inspect.getouterframes(curframe, 2)
 
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "  insert_VM_into_Stopped_VM_Instances")
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tVM INFO  : ID: %d, ST: %s" % (vm.id, simgval.get_sim_code_str(vm.status)))
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tCaller   : %s, %s:%d" % (calframe[1][3], calframe[1][1], calframe[1][2]))
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
-    clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "BEFORE insert_VM_into_Stopped_VM_Instances", g_Stopped_VM_Instances)
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "  insert_VM_into_Stopped_VM_Instances")
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tVM INFO  : ID: %d, ST: %s" % (vm.id, simgval.get_sim_code_str(vm.status)))
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tCaller   : %s, %s:%d" % (calframe[1][3], calframe[1][1], calframe[1][2]))
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+    #clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "BEFORE insert_VM_into_Stopped_VM_Instances", g_Stopped_VM_Instances)
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
 
     g_Stopped_VM_Instances_CV.acquire()
     g_Stopped_VM_Instances.append(vm)
     g_Stopped_VM_Instances_CV.notify()
     g_Stopped_VM_Instances_CV.release()
 
-    clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "AFTER insert_VM_into_Stopped_VM_Instances", g_Stopped_VM_Instances)
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+    #clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "AFTER insert_VM_into_Stopped_VM_Instances", g_Stopped_VM_Instances)
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
 
 def get_VM_from_Stopped_VM_Instances (vm_id):
 
@@ -519,24 +521,24 @@ def insert_VM_into_Temp_VM_Instances (vm):
     global g_Temp_VM_Instances
     global g_Temp_VM_Instances_CV
 
-    curframe = inspect.currentframe()
-    calframe = inspect.getouterframes(curframe, 2)
+    #curframe = inspect.currentframe()
+    #calframe = inspect.getouterframes(curframe, 2)
 
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "  insert_VM_into_Temp_VM_Instances")
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tVM INFO  : ID: %d, ST: %s" % (vm.id, simgval.get_sim_code_str(vm.status)))
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tCaller   : %s, %s:%d" % (calframe[1][3], calframe[1][1], calframe[1][2]))
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
-    clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "BEFORE insert_VM_into_Temp_VM_Instances", g_Temp_VM_Instances)
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "  insert_VM_into_Temp_VM_Instances")
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tVM INFO  : ID: %d, ST: %s" % (vm.id, simgval.get_sim_code_str(vm.status)))
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tCaller   : %s, %s:%d" % (calframe[1][3], calframe[1][1], calframe[1][2]))
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+    #clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "BEFORE insert_VM_into_Temp_VM_Instances", g_Temp_VM_Instances)
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
 
     g_Temp_VM_Instances_CV.acquire()
     g_Temp_VM_Instances.append(vm)
     g_Temp_VM_Instances_CV.notify()
     g_Temp_VM_Instances_CV.release()
 
-    clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "AFTER insert_VM_into_Temp_VM_Instances", g_Temp_VM_Instances)
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+    #clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "AFTER insert_VM_into_Temp_VM_Instances", g_Temp_VM_Instances)
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
 
 def get_VM_from_Temp_VM_Instances (vm_id):
 
@@ -554,25 +556,24 @@ def remove_VM_from_Temp_VM_Instances (vm_id):
     for vm in g_Temp_VM_Instances:
         if vm.id == vm_id:
 
-            curframe = inspect.currentframe()
-            calframe = inspect.getouterframes(curframe, 2)
+            #curframe = inspect.currentframe()
+            #calframe = inspect.getouterframes(curframe, 2)
 
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + "  remove_VM_from_Temp_VM_Instances")
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tVM INFO  : ID: %d" % (vm.id))
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tCaller   : %s, %s:%d"
-            % (calframe[1][3], calframe[1][1], calframe[1][2]))
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
-            clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "BEFORE remove_VM_from_Temp_VM_Instances", g_Temp_VM_Instances)
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+            #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+            #g_log_handler.info (str(Global_Curr_Sim_Clock) + "  remove_VM_from_Temp_VM_Instances")
+            #g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tVM INFO  : ID: %d" % (vm.id))
+            #g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tCaller   : %s, %s:%d" % (calframe[1][3], calframe[1][1], calframe[1][2]))
+            #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+            #clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "BEFORE remove_VM_from_Temp_VM_Instances", g_Temp_VM_Instances)
+            #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
 
             g_Temp_VM_Instances_CV.acquire()
             g_Temp_VM_Instances.remove(vm)
             g_Temp_VM_Instances_CV.notify()
             g_Temp_VM_Instances_CV.release()
 
-            clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "AFTER remove_VM_from_Temp_VM_Instances", g_Temp_VM_Instances)
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
+            #clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "AFTER remove_VM_from_Temp_VM_Instances", g_Temp_VM_Instances)
+            #g_log_handler.info (str(Global_Curr_Sim_Clock) + "")
 
             return True
 
@@ -587,9 +588,8 @@ def insert_job_into_VM_Job_Queue (vm_id, job, is_migration=False):
 
     if vm is None:
         job_str = simobj.get_job_info_str(job)
-        print "[Broker__] %s VM (ID:%d) not found for %s Assignment!" % (str(Global_Curr_Sim_Clock), vm_id, job_str)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  VM (ID:%d) not found for %s Assignment!' % (vm_id, job_str))
-        clib.logwrite_VM_Instance_Lists (g_log_handler, Global_Curr_Sim_Clock, "Current g_Running_VM_Instances", g_Running_VM_Instances)
+        g_log_handler.error("[Broker__] %s VM (ID:%d) not found for %s Assignment!" % (str(Global_Curr_Sim_Clock), vm_id, job_str))
+        clib.logwrite_VM_Instance_Lists (g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "Current g_Running_VM_Instances", g_Running_VM_Instances)
         clib.sim_exit()
 
     simobj.insert_job_into_VM_job_queue (vm, job)
@@ -601,9 +601,8 @@ def get_VM_sd_policy_activated (vm_id):
 
     vm = get_VM_from_Running_VM_Instances(vm_id)
     if vm is None:
-        print "[Broker__] %s VM (ID:%d) not found in current running VM List" % (str(Global_Curr_Sim_Clock), vm_id)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  VM (ID:%d) not found in current running VM List' % (vm_id))
-        clib.logwrite_VM_Instance_Lists (g_log_handler, Global_Curr_Sim_Clock, "Current g_Running_VM_Instances", g_Running_VM_Instances)
+        g_log_handler.error ("[Broker__] %s VM (ID:%d) not found in current running VM List" % (str(Global_Curr_Sim_Clock), vm_id))
+        clib.logwrite_VM_Instance_Lists (g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "Current g_Running_VM_Instances", g_Running_VM_Instances)
         clib.sim_exit()
 
     return vm.sd_policy_activated
@@ -612,13 +611,11 @@ def update_VM_sd_wait_time (vm_id, wait_time):
 
     vm = get_VM_from_Running_VM_Instances(vm_id)
     if vm is None:
-        print "[Broker__] %s VM (ID:%d) not found in current running VM List" % (str(Global_Curr_Sim_Clock), vm_id)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  VM (ID:%d) not found in current running VM List' % (vm_id))
-        clib.logwrite_VM_Instance_Lists (g_log_handler, Global_Curr_Sim_Clock, "Current g_Running_VM_Instances", g_Running_VM_Instances)
+        g_log_handler.error ("[Broker__] %s VM (ID:%d) not found in current running VM List" % (str(Global_Curr_Sim_Clock), vm_id))
+        clib.logwrite_VM_Instance_Lists (g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "Current g_Running_VM_Instances", g_Running_VM_Instances)
         clib.sim_exit()
 
     simobj.set_VM_sd_wait_time(vm, wait_time)
-    #clib.logwrite_vm_obj(g_sim_conf.g_debug_log, Global_Curr_Sim_Clock, vm)
 
 def get_vm_wait_time_bounds ():
 
@@ -650,9 +647,8 @@ def cal_estimated_job_completion_time (vm_id, job_actual_duration_infos):
 
     vm = get_VM_from_Running_VM_Instances (vm_id)
     if vm is None:
-        print "[Broker__] %s CAL_EJCT: VM (ID:%d, TY:%s) not found!" % (str(Global_Curr_Sim_Clock), vm_id, vm.type_name)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  CAL_EJCT: VM (ID:%d, TY:%s) not found!' % (vm_id))
-        clib.logwrite_VM_Instance_Lists (g_log_handler, Global_Curr_Sim_Clock, "Current g_Running_VM_Instances", g_Running_VM_Instances, vm.type_name)
+        g_log_handler.error("[Broker__] %s CAL_EJCT: VM (ID:%d, TY:%s) not found!" % (str(Global_Curr_Sim_Clock), vm_id, vm.type_name))
+        clib.logwrite_VM_Instance_Lists (g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "Current g_Running_VM_Instances", g_Running_VM_Instances)
         clib.sim_exit()
 
     # procedure
@@ -668,8 +664,7 @@ def cal_estimated_job_completion_time (vm_id, job_actual_duration_infos):
 
     est_job_comp_time = sys.maxint
 
-    print "[Broker__] %s CAL_EJCT: VM (ID:%d, TY:%s)'s Status: %s" % (str(Global_Curr_Sim_Clock), vm.id, vm.type_name, simgval.get_sim_code_str(vm.status))
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + "  CAL_EJCT: VM (ID:%d, TY:%s)'s Status: %s" % (vm.id, vm.type_name, simgval.get_sim_code_str(vm.status)))
+    g_log_handler.info ("[Broker__] %s CAL_EJCT: VM (ID:%d, TY:%s)'s Status: %s" % (str(Global_Curr_Sim_Clock), vm.id, vm.type_name, simgval.get_sim_code_str(vm.status)))
     if vm.status == simgval.gVM_ST_CREATING:
 
         # JCT = [average_startup_lag - (curr_clock - vm.time_create)] + sum (j[2] for j in vm.job_queue) + job_duration
@@ -681,28 +676,17 @@ def cal_estimated_job_completion_time (vm_id, job_actual_duration_infos):
             avg_startup_lag = get_max_startup_lagtime()
 
         exe_time_q_jobs = clib.get_sum_job_actual_duration (vm.job_queue)
-
-        print "\nexe_time_q_jobs = ", exe_time_q_jobs, "\n"
-
-        print "[Broker__] %s\t\tCalculate Estimated Job Completion Time on VM (ID:%d,ST:%s)" % (str(Global_Curr_Sim_Clock), vm.id, simgval.get_sim_code_str(vm.status))
-        print "[Broker__] %s\t\tCAL_EJCT: AVG Startup Lag: %d" % (str(Global_Curr_Sim_Clock), avg_startup_lag)
-        print "[Broker__] %s\t\tCAL_EJCT: VM(%d)'s Curr RunTime (Clock-TC): %d" % (str(Global_Curr_Sim_Clock), vm.id, curr_running_time)
-        print "[Broker__] %s\t\tCAL_EJCT: VM(%d)'s JRT in Queue[len:%d]: %d" % (str(Global_Curr_Sim_Clock), vm.id, len(vm.job_queue), exe_time_q_jobs)
-        print "[Broker__] %s\t\tCAL_EJCT: Recv Job Actual Duration: %s (CPU:%s, IO:%s)" % (str(Global_Curr_Sim_Clock), job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2])
-
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + "\t\tCalculate Estimated Job Completion Time on VM (ID:%d,ST:%s)" % (vm.id, simgval.get_sim_code_str(vm.status)))
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + "\t\tCAL_EJCT: AVG Startup Lag: %d" % (avg_startup_lag))
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + "\t\tCAL_EJCT: VM(%d)'s Curr RunTime (Clock-TC): %d" % (vm.id, curr_running_time))
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + "\t\tCAL_EJCT: VM(%d)'s JRT in Queue[len:%d]: %d" % (vm.id, len(vm.job_queue), exe_time_q_jobs))
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + "\t\tCAL_EJCT: Recv Job Actual Duration: %s (CPU:%s, IO:%s)" % (job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2]))
+        g_log_handler.info("[Broker__] %s\t\tCalculate Estimated Job Completion Time on VM (ID:%d,ST:%s)" % (str(Global_Curr_Sim_Clock), vm.id, simgval.get_sim_code_str(vm.status)))
+        g_log_handler.info("[Broker__] %s\t\tCAL_EJCT: AVG Startup Lag: %d" % (str(Global_Curr_Sim_Clock), avg_startup_lag))
+        g_log_handler.info("[Broker__] %s\t\tCAL_EJCT: VM(%d)'s Curr RunTime (Clock-TC): %d" % (str(Global_Curr_Sim_Clock), vm.id, curr_running_time))
+        g_log_handler.info("[Broker__] %s\t\tCAL_EJCT: VM(%d)'s JRT in Queue[len:%d]: %d" % (str(Global_Curr_Sim_Clock), vm.id, len(vm.job_queue), exe_time_q_jobs))
+        g_log_handler.info("[Broker__] %s\t\tCAL_EJCT: Recv Job Actual Duration: %s (CPU:%s, IO:%s)" % (str(Global_Curr_Sim_Clock), job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2]))
 
         # estimated job completion time
         est_job_comp_time = avg_startup_lag - curr_running_time + exe_time_q_jobs + job_actual_duration_infos[0]
 
-        print "[Broker__] %s\t\tCAL_EJCT: EJCT (%d) = AVG_ST_LAG (%d) - CURR_RT (%d) + JET_JQ (%d) + JR (%s - CPU:%s, IO:%s)" \
-              % (str(Global_Curr_Sim_Clock), est_job_comp_time, avg_startup_lag, curr_running_time, exe_time_q_jobs, job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2])
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + "\t\tCAL_EJCT: EJCT (%d) = AVG_ST_LAG (%d) - CURR_RT (%d) + JET_JQ (%d) + JR (%s - CPU:%s, IO:%s)"
-                            % (est_job_comp_time, avg_startup_lag, curr_running_time, exe_time_q_jobs, job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2]))
+        g_log_handler.info("[Broker__] %s\t\tCAL_EJCT: EJCT (%d) = AVG_ST_LAG (%d) - CURR_RT (%d) + JET_JQ (%d) + JR (%s - CPU:%s, IO:%s)" \
+              % (str(Global_Curr_Sim_Clock), est_job_comp_time, avg_startup_lag, curr_running_time, exe_time_q_jobs, job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2]))
 
     elif vm.status == simgval.gVM_ST_ACTIVE:
 
@@ -713,50 +697,37 @@ def cal_estimated_job_completion_time (vm_id, job_actual_duration_infos):
         if vm.current_job == None:
 
             # current job is None (VM is Idle)
-
-            print "[Broker__] %s CAL_EJCT: VM (ID:%dm, TY:%s)'s Current Job is None [CST:%d]" \
-                  % (str(Global_Curr_Sim_Clock), vm.id, vm.type_name, vm.current_job_start_clock)
-            g_log_handler.info(str(Global_Curr_Sim_Clock) + "  CCAL_EJCT: VM (ID:%d, TY:%s)'s Current Job is None [CST:%d]" % (vm.id, vm.type_name, vm.current_job_start_clock))
-
+            g_log_handler.info("[Broker__] %s CAL_EJCT: VM (ID:%dm, TY:%s)'s Current Job is None [CST:%d]" \
+                  % (str(Global_Curr_Sim_Clock), vm.id, vm.type_name, vm.current_job_start_clock))
+            
             if vm.current_job_start_clock != -1:
-                print "[Broker__] %s CAL_EJCT: VM (ID:%d, TY:%s)'s Invalid Current Job (%s) Start Time (%d)" \
-                      % (str(Global_Curr_Sim_Clock), vm.id, vm.type_name, vm.current_job, vm.current_job_start_clock)
-                g_log_handler.error(str(Global_Curr_Sim_Clock) + "  CAL_EJCT: VM (ID:%d, TY:%s)'s Invalid Current Job (%s) Start Time (%d)"
-                                    % (vm.id, vm.type_name, vm.current_job, vm.current_job_start_clock))
-                clib.logwrite_vm_obj(g_log_handler, Global_Curr_Sim_Clock, vm)
+                g_log_handler.error("[Broker__] %s CAL_EJCT: VM (ID:%d, TY:%s)'s Invalid Current Job (%s) Start Time (%d)" \
+                      % (str(Global_Curr_Sim_Clock), vm.id, vm.type_name, vm.current_job, vm.current_job_start_clock))
+                clib.logwrite_vm_obj(g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), vm)
+                clib.sim_exit() # 2015-03-30
 
             # JCT = sum (j[2] for j in vm.job_queue) + job_duration
 
-            print "[Broker__] %s\t\tCalculate Estimated Job Completion Time on VM (ID:%d,ST:%s)" % (str(Global_Curr_Sim_Clock), vm.id, simgval.get_sim_code_str(vm.status))
-            print "[Broker__] %s\t\tCAL_EJCT: VM (ID:%d, TY:%s)'s JRT in Queue [len:%d]: %d" % (str(Global_Curr_Sim_Clock), vm.id, vm.type_name, len(vm.job_queue), exe_time_q_jobs)
-            print "[Broker__] %s\t\tCAL_EJCT: Recv Job Actual Duration: %s (CPU:%s, IO:%s)" % (str(Global_Curr_Sim_Clock), job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2])
-
-            g_log_handler.info(str(Global_Curr_Sim_Clock) + "\t\tCalculate Estimated Job Completion Time on VM (ID:%d,ST:%s)" % (vm.id, simgval.get_sim_code_str(vm.status)))
-            g_log_handler.info(str(Global_Curr_Sim_Clock) + "\t\tCAL_EJCT: VM(ID:%d, TY:%s)'s JRT in Queue [len:%d]: %d" % (vm.id, vm.type_name, len(vm.job_queue), exe_time_q_jobs))
-            g_log_handler.info(str(Global_Curr_Sim_Clock) + "\t\tCAL_EJCT: Recv Job Actual Duration: %s (CPU:%s, IO:%s)" % (job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2]))
+            g_log_handler.info("[Broker__] %s\t\tCalculate Estimated Job Completion Time on VM (ID:%d,ST:%s)" % (str(Global_Curr_Sim_Clock), vm.id, simgval.get_sim_code_str(vm.status)))
+            g_log_handler.info("[Broker__] %s\t\tCAL_EJCT: VM (ID:%d, TY:%s)'s JRT in Queue [len:%d]: %d" % (str(Global_Curr_Sim_Clock), vm.id, vm.type_name, len(vm.job_queue), exe_time_q_jobs))
+            g_log_handler.info("[Broker__] %s\t\tCAL_EJCT: Recv Job Actual Duration: %s (CPU:%s, IO:%s)" % (str(Global_Curr_Sim_Clock), job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2]))
 
             # estimated job completion time
             est_job_comp_time = exe_time_q_jobs + job_actual_duration_infos[0]
-
-            print "[Broker__] %s\t\tCAL_EJCT: EJCT (%d) = JET_JQ (%d) + JR (%s - CPU:%s, IO:%s)" \
-                  % (str(Global_Curr_Sim_Clock), est_job_comp_time, exe_time_q_jobs, job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2])
-            g_log_handler.info(str(Global_Curr_Sim_Clock) + "\t\tCAL_EJCT: EJCT (%d) = JET_JQ (%d) + JR (%s - CPU:%s, IO:%s)"
-                                % (est_job_comp_time, exe_time_q_jobs, job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2]))
+            g_log_handler.info ("[Broker__] %s\t\tCAL_EJCT: EJCT (%d) = JET_JQ (%d) + JR (%s - CPU:%s, IO:%s)" \
+                  % (str(Global_Curr_Sim_Clock), est_job_comp_time, exe_time_q_jobs, job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2]))
 
         else:
 
             # current job is NOT None (VM is processing the current job)
-            print "[Broker__] %s CAL_EJCT: VM (ID:%d, TY:%s)'s Current Job (ID:%d,NM:%s,ADR:%d (C:%s,IO:%s),DL:%d) is NOT None [CST:%d]" \
-                  % (str(Global_Curr_Sim_Clock), vm.id, vm.type_name, vm.current_job.id, vm.current_job.name, vm.current_job.act_duration_on_VM, vm.current_job.act_cputime_on_VM, vm.current_job.act_nettime_on_VM, vm.current_job.deadline, vm.current_job_start_clock)
-            g_log_handler.info(str(Global_Curr_Sim_Clock) + "  CAL_EJCT: VM (ID:%d, TY:%s)'s Current Job (ID:%d,NM:%s,ADR:%d (C:%s,IO:%s),DL:%d) is NOT None [CST:%d]"
-                               % (vm.id, vm.type_name, vm.current_job.id, vm.current_job.name, vm.current_job.act_duration_on_VM, vm.current_job.act_cputime_on_VM, vm.current_job.act_nettime_on_VM, vm.current_job.deadline, vm.current_job_start_clock))
+            g_log_handler.info ("[Broker__] %s CAL_EJCT: VM (ID:%d, TY:%s)'s Current Job (ID:%d,NM:%s,ADR:%d (C:%s,IO:%s),DL:%d) is NOT None [CST:%d]" \
+                  % (str(Global_Curr_Sim_Clock), vm.id, vm.type_name, vm.current_job.id, vm.current_job.name, vm.current_job.act_duration_on_VM, vm.current_job.act_cputime_on_VM, vm.current_job.act_nettime_on_VM, vm.current_job.deadline, vm.current_job_start_clock))
 
             if vm.current_job_start_clock == -1:
-                print "[Broker__] %s CAL_EJCT: VM (ID:%d, TY:%s)'s Invalid Current Job (%s) Start Time (%d)" \
-                      % (str(Global_Curr_Sim_Clock), vm.id, vm.type_name, simobj.get_job_info_str(vm.current_job), vm.current_job_start_clock)
-                g_log_handler.error(str(Global_Curr_Sim_Clock) + "  CAL_EJCT: VM (ID:%d, TY:%s)'s Invalid Current Job (%s) Start Time (%d)"
-                                    % (vm.id, vm.type_name, simobj.get_job_info_str(vm.current_job), vm.current_job_start_clock))
-                clib.logwrite_vm_obj(g_log_handler, Global_Curr_Sim_Clock, vm)
+
+                g_log_handler.error ("[Broker__] %s CAL_EJCT: VM (ID:%d, TY:%s)'s Invalid Current Job (%s) Start Time (%d)" \
+                      % (str(Global_Curr_Sim_Clock), vm.id, vm.type_name, simobj.get_job_info_str(vm.current_job), vm.current_job_start_clock))
+                clib.logwrite_vm_obj(g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), vm)
                 clib.sim_exit()
 
             # jct = remaining running time of current job + sum of duration in job queue + job_duration
@@ -765,50 +736,24 @@ def cal_estimated_job_completion_time (vm_id, job_actual_duration_infos):
             sum_past_job_exe_time = clib.get_sum_job_actual_duration (vm.job_history)
             remaining_time_curr_job = vm.current_job_start_clock + vm.current_job.act_duration_on_VM - Global_Curr_Sim_Clock
             
-            """
-            disabled on 12/26/2014
-            print "\n\n"
-            clib.display_vm_obj(Global_Curr_Sim_Clock, vm)
-            print "\n\n"
-            clib.display_job_obj(Global_Curr_Sim_Clock, vm.current_job)
-
-            print "\n\n=============================================================="
-            print "remaining_time_curr_job = ", remaining_time_curr_job
-            print "vm.current_job_start_clock = ", vm.current_job_start_clock
-            print "vm.current_job.act_duration_on_VM = ", vm.current_job.act_duration_on_VM
-            print "Global_Curr_Sim_Clock = ", Global_Curr_Sim_Clock
-            print "==============================================================\n\n"
-            """
-
             if remaining_time_curr_job < 0:
-                print "[Broker__] %s CAL_EJCT: Remaining Exe Time for Current %s is Negative: %d = CJST (%d) + CJADR (%d - C:%s/IO:%s) - CL(%d)" \
-                      % (str(Global_Curr_Sim_Clock), simobj.get_job_info_str(vm.current_job), remaining_time_curr_job, vm.current_job_start_clock, vm.current_job.act_duration_on_VM, vm.current_job.act_cputime_on_VM, vm.current_job.act_nettime_on_VM, Global_Curr_Sim_Clock)
-                g_log_handler.error(str(Global_Curr_Sim_Clock) + "  Remaining Exe Time for Current %s is Negative: %d = CJST (%d) + CJADR (%d - C:%s/IO:%s) - CL(%d)"
-                                    % (simobj.get_job_info_str(vm.current_job), remaining_time_curr_job, vm.current_job_start_clock, vm.current_job.act_duration_on_VM, vm.current_job.act_cputime_on_VM, vm.current_job.act_nettime_on_VM, Global_Curr_Sim_Clock))
+                g_log_handler.error ("[Broker__] %s CAL_EJCT: Remaining Exe Time for Current %s is Negative: %d = CJST (%d) + CJADR (%d - C:%s/IO:%s) - CL(%d)" \
+                      % (str(Global_Curr_Sim_Clock), simobj.get_job_info_str(vm.current_job), remaining_time_curr_job, vm.current_job_start_clock, vm.current_job.act_duration_on_VM, vm.current_job.act_cputime_on_VM, vm.current_job.act_nettime_on_VM, Global_Curr_Sim_Clock))
                 clib.sim_exit()
 
-            print "[Broker__] %s\t\tCalculate Estimated Job Completion Time on VM (ID:%d,ST:%s)" % (str(Global_Curr_Sim_Clock), vm.id, simgval.get_sim_code_str(vm.status))
-            print "[Broker__] %s\t\tCAL_EJCT: Current Simulation Clock: %d" % (str(Global_Curr_Sim_Clock), Global_Curr_Sim_Clock)
-            print "[Broker__] %s\t\tCAL_EJCT: Remaining Exe Time for Current %s: %d = CJST (%d) + CJADR (%d - C:%s/IO:%s) - CL(%d)" \
+            g_log_handler.error("[Broker__] %s\t\tCalculate Estimated Job Completion Time on VM (ID:%d,ST:%s)" % (str(Global_Curr_Sim_Clock), vm.id, simgval.get_sim_code_str(vm.status)))
+            g_log_handler.error("[Broker__] %s\t\tCAL_EJCT: Current Simulation Clock: %d" % (str(Global_Curr_Sim_Clock), Global_Curr_Sim_Clock))
+            g_log_handler.error("[Broker__] %s\t\tCAL_EJCT: Remaining Exe Time for Current %s: %d = CJST (%d) + CJADR (%d - C:%s/IO:%s) - CL(%d)" \
                       % (str(Global_Curr_Sim_Clock), simobj.get_job_info_str(vm.current_job), remaining_time_curr_job, vm.current_job_start_clock,
-                         vm.current_job.act_duration_on_VM, vm.current_job.act_cputime_on_VM, vm.current_job.act_nettime_on_VM, Global_Curr_Sim_Clock)
-            print "[Broker__] %s\t\tCAL_EJCT: VM(ID:%d, TY:%s)'s JRT in Queue [len:%d]: %d" % (str(Global_Curr_Sim_Clock), vm.id, vm.type_name, len(vm.job_queue), exe_time_q_jobs)
-            print "[Broker__] %s\t\tCAL_EJCT: Recv Job Actual Duration: %s (CPU:%s, IO:%s)" % (str(Global_Curr_Sim_Clock), job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2])
-
-            g_log_handler.info(str(Global_Curr_Sim_Clock) + "\t\tCalculate Estimated Job Completion Time on VM (ID:%d,ST:%s)" % (vm.id, simgval.get_sim_code_str(vm.status)))
-            g_log_handler.info(str(Global_Curr_Sim_Clock) + "\t\tCAL_EJCT: Current Simulation Clock: %d" % (Global_Curr_Sim_Clock))
-            g_log_handler.info(str(Global_Curr_Sim_Clock) + "\t\tCAL_EJCT: Remaining Exe Time for Current %s: %d = CJST (%d) + CJADR (%d - C:%s/IO:%s) - CL(%d)"
-                               % (simobj.get_job_info_str(vm.current_job), remaining_time_curr_job, vm.current_job_start_clock, vm.current_job.act_duration_on_VM, vm.current_job.act_cputime_on_VM, vm.current_job.act_nettime_on_VM, Global_Curr_Sim_Clock))
-            g_log_handler.info(str(Global_Curr_Sim_Clock) + "\t\tCAL_EJCT: VM(ID:%d, TY:%s)'s JRT in Queue [len:%d]: %d" % (vm.id, vm.type_name, len(vm.job_queue), exe_time_q_jobs))
-            g_log_handler.info(str(Global_Curr_Sim_Clock) + "\t\tCAL_EJCT: Recv Job Actual Duration: %s (CPU:%s, IO:%s)" % (job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2]))
+                         vm.current_job.act_duration_on_VM, vm.current_job.act_cputime_on_VM, vm.current_job.act_nettime_on_VM, Global_Curr_Sim_Clock))
+            g_log_handler.error("[Broker__] %s\t\tCAL_EJCT: VM(ID:%d, TY:%s)'s JRT in Queue [len:%d]: %d" % (str(Global_Curr_Sim_Clock), vm.id, vm.type_name, len(vm.job_queue), exe_time_q_jobs))
+            g_log_handler.error("[Broker__] %s\t\tCAL_EJCT: Recv Job Actual Duration: %s (CPU:%s, IO:%s)" % (str(Global_Curr_Sim_Clock), job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2]))
 
             # calculate estimate job execution time on the VM
             est_job_comp_time = remaining_time_curr_job  + exe_time_q_jobs + job_actual_duration_infos[0]
 
-            print "[Broker__] %s\t\tCAL_EJCT: EJCT (%d) = REMAIN_CR (%d) + JET_JQ (%d) + JR (%s - CPU:%s, IO:%s)" \
-                  % (str(Global_Curr_Sim_Clock), est_job_comp_time, remaining_time_curr_job, exe_time_q_jobs, job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2])
-            g_log_handler.info(str(Global_Curr_Sim_Clock) + "\t\tCAL_EJCT: EJCT (%d) = REMAIN_CR (%d) + JET_JQ (%d) + JR (%s - CPU:%s, IO:%s)"
-                                % (est_job_comp_time, remaining_time_curr_job, exe_time_q_jobs, job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2]))
+            g_log_handler.info("[Broker__] %s\t\tCAL_EJCT: EJCT (%d) = REMAIN_CR (%d) + JET_JQ (%d) + JR (%s - CPU:%s, IO:%s)" \
+                  % (str(Global_Curr_Sim_Clock), est_job_comp_time, remaining_time_curr_job, exe_time_q_jobs, job_actual_duration_infos[0], job_actual_duration_infos[1], job_actual_duration_infos[2]))
 
     return est_job_comp_time
 
@@ -818,20 +763,25 @@ def cal_estimated_job_completion_time (vm_id, job_actual_duration_infos):
 def cal_estimation_job_complete_clock_for_VM (vm_obj, job_id):
 
     # this lib only can be used when [1] vm.status == simgval.gVM_ST_ACTIVE && [2] vm.current_job == None
-    if vm_obj.status != simgval.gVM_ST_ACTIVE or vm_obj.current_job != None:
-        print "[Broker__] %s CAL_EJCC: %s Status Error! or Current Job (%s) Error!" \
-              % (str(Global_Curr_Sim_Clock), vm_obj.get_str_info(), vm_obj.current_job)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + "  CAL_EJCC: %s Status Error! or Current Job (%s) Error!"
-                            % (vm_obj.get_str_info(), vm_obj.current_job))
+    if vm_obj.status != simgval.gVM_ST_ACTIVE:
+        g_log_handler.error("[Broker__] %s CAL_EJCC: %s Status Error!" % (str(Global_Curr_Sim_Clock), vm_obj.get_str_info()))
         clib.sim_exit()
+    
+    curr_job_remain = 0
+    if vm_obj.current_job != None:
 
-    remaining_clock = Global_Curr_Sim_Clock
+        curr_job_remain = (vm_obj.current_job.time_start + vm_obj.current_job.act_duration_on_VM) - Global_Curr_Sim_Clock
+        if curr_job_remain < 0:
+            curr_job_remain = 0
+
+    remaining_clock = Global_Curr_Sim_Clock + curr_job_remain
     for qjob in vm_obj.job_queue:
 
         remaining_clock += qjob.act_duration_on_VM
-
         if qjob.id == job_id:
             return remaining_clock
+
+    return remaining_clock
 
 # check for storage simulation on 10.29.2014
 def check_all_deadline_meet (vm_obj):
@@ -846,7 +796,6 @@ def check_all_deadline_meet (vm_obj):
         sum_total_act_duration += job.act_duration_on_VM
         clock_job_deadline = job.time_create + job.deadline
         est_job_comp_time = cal_estimation_job_complete_clock_for_VM (vm_obj, job.id)
-        #print "est_job_comp_time=>", est_job_comp_time
 
         if est_job_comp_time > clock_job_deadline:
             sum_dl_mismatch += (est_job_comp_time - clock_job_deadline)
@@ -858,7 +807,6 @@ def check_all_deadline_meet (vm_obj):
 
 # VM Evaluation based on vm selection method
 def do_VM_evaluation (vm_run_time, vm_unit_cost):
-
     # 1. cost-based selection
     if g_sim_conf.vm_selection_method == simgval.gVM_SEL_METHOD_COST:
         return vm_unit_cost
@@ -873,8 +821,7 @@ def do_VM_evaluation (vm_run_time, vm_unit_cost):
 
     # error case
     else:
-        print "[Broker__] %s do_VM_evaluation Error! - Unknown VM Selection Code (%s)" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.vm_selection_method))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  do_VM_evaluation Error! - Unknown VM Selection Code (%s)' % (simgval.get_sim_code_str(g_sim_conf.vm_selection_method)))
+        g_log_handler.error("[Broker__] %s do_VM_evaluation Error! - Unknown VM Selection Code (%s)" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.vm_selection_method)))
         clib.sim_exit()
 
 # if return 0: both vm has same evaluation result
@@ -884,13 +831,9 @@ def do_VM_evaluation (vm_run_time, vm_unit_cost):
 # Storage Simulation Debug Point - check for storage simulation - 10/29/2014
 def do_VM_compare (vm_info1, vm_info2):
 
-    clib.sim_clearscreen()
-    print "do vm compare"
-
     if vm_info1 == vm_info2:
-        print "[Broker__] %s do_VM_compare Error! - Two arguments are the same (arg1:%s, arg2:%s)" \
-              % (str(Global_Curr_Sim_Clock), vm_info1, vm_info2)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  do_VM_compare Error! - Two arguments are the same (arg1:%s, arg2:%s)' % (vm_info1, vm_info2))
+        g_log_handler.error("[Broker__] %s do_VM_compare Error! - Two arguments are the same (arg1:%s, arg2:%s)" \
+              % (str(Global_Curr_Sim_Clock), vm_info1, vm_info2))
         clib.sim_exit()
 
     # vm_info1 = [vm_type_name, vm_type_unit_price, vm_run_time]
@@ -1045,20 +988,12 @@ def VScale_Trigger_Condition_Check (vm_obj):
             max_cap = g_sim_conf.job_assign_max_running_vms
 
             # Vscale can be activated when the num of curr run vms == max cap of vm
-
-            print g_Running_VM_Instances
-
-            for v in g_Running_VM_Instances:
-                clib.display_vm_obj(Global_Curr_Sim_Clock, v)
-                print ""
-
             if curr_run_vm_cnt == max_cap:
                 check_Vscale = True
 
             # this is error case
             elif curr_run_vm_cnt > max_cap:
-                print "[Broker__] %s VM Max Cap (%d) Error! - # of Curr Running VMs (%d)" % (str(Global_Curr_Sim_Clock), max_cap, curr_run_vm_cnt)
-                g_log_handler.error(str(Global_Curr_Sim_Clock) + '  VM Max Cap (%d) Error! - # of Curr Running VMs (%d)' % (max_cap, curr_run_vm_cnt))
+                g_log_handler.error ("[Broker__] %s VM Max Cap (%d) Error! - # of Curr Running VMs (%d)" % (str(Global_Curr_Sim_Clock), max_cap, curr_run_vm_cnt))
                 clib.sim_exit()
 
             # num of curr run VMs < max_cap: Vscale disabled.
@@ -1075,18 +1010,7 @@ def VScale_Trigger_Condition_Check (vm_obj):
         flag_vm_evaluation = False
 
         # VSCALE Trigger regradless of deadline satisfaction
-
         all_deadline_meet, curr_sum_dl_mismatch, curr_sum_act_duration, curr_num_missed_jobs = check_all_deadline_meet (vm_obj)
-
-        """
-        print "\nVSO Option           : ", simgval.get_sim_code_str(g_sim_conf.vscale_operation)
-        print "current vm type        = ", vm_obj.type_name
-        print "all_deadline_meet      = ", all_deadline_meet
-        print "curr_sum_dl_mismatch   = ", curr_sum_dl_mismatch
-        print "curr_sum_act_duration  = ", curr_sum_act_duration
-        print "curr_num_missed_jobs   = ", curr_num_missed_jobs
-        """
-
         if g_sim_conf.vscale_operation == simgval.gVSO_VSCALE_BOTH:
             flag_vm_evaluation = True
 
@@ -1101,23 +1025,12 @@ def VScale_Trigger_Condition_Check (vm_obj):
                 flag_vm_evaluation = True
 
         else:
-            print "[Broker__] %s Invalid VScale_Operation - %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.vscale_operation))
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  Invalid VScale_Operation - %s' % (simgval.get_sim_code_str(g_sim_conf.vscale_operation)))
+            g_log_handler.error("[Broker__] %s Invalid VScale_Operation - %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.vscale_operation)))
             clib.sim_exit()
 
         if flag_vm_evaluation == True:
 
             vscale_vm_type, vscale_vm_runtime, vscale_sum_dl_mismatch, vscale_num_of_missed_jobs = VScale_VM_Select (vm_obj)
-
-            """
-            print "curr vm id and type", vm_obj.id, vm_obj.type_name
-            print "vscale_vm_type            = ", vscale_vm_type.get_infos()
-            print "vscale_vm_runtime         = ", vscale_vm_runtime
-            print "vscale_sum_dl_mismatch    = ", vscale_sum_dl_mismatch
-            print "vscale_num_of_missed_jobs = ", vscale_num_of_missed_jobs
-            clib.sim_exit()
-            """
-
             if vm_obj.type_name != vscale_vm_type.vm_type_name:
 
                 # candidate vm type should be different from the type of current vm
@@ -1198,32 +1111,14 @@ def VM_Job_Migrate (curr_vm, new_vm, vm_type_obj):
         insert_job_into_VM_Job_Queue (new_vm.id, job, True)
         #job.logwrite_job_obj(Global_Curr_Sim_Clock, l)
 
-    """
-    clib.sim_clearscreen()
-    clib.sim_long_sleep()
-
-    clib.display_vm_obj(Global_Curr_Sim_Clock, curr_vm)
-    print ""
-    print "migration completed!!!"
-    print ""
-    clib.display_vm_obj(Global_Curr_Sim_Clock, new_vm)
-
-    clib.sim_long_sleep()
-    """
-    #clib.logwrite_vm_obj(l, Global_Curr_Sim_Clock, curr_vm)
-    #clib.logwrite_vm_obj(l, Global_Curr_Sim_Clock, new_vm)
-
-
 # Related to Job Failure - ceated on 11/05/2014
 def get_update_job_duration_for_failure_case (job_obj):
 
     job_str = simobj.get_job_info_str(job_obj)
 
     if job_obj.job_failure_recovered != True or job_obj.std_job_failure_time == 0 or job_obj.vm_job_failure_time == 0:
-        print "[Broker__] %s get_update_job_duration_for_failure_case Error! ==> Invalid %s -- RECOVER:%s, STD_JOB_FAILURE_TM:%s, VM_JOB_FAILURE_TM:%s" \
-              % (str(Global_Curr_Sim_Clock), job_str, job_obj.job_failure_recovered, job_obj.std_job_failure_time, job_obj.vm_job_failure_time)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + "  get_update_job_duration_for_failure_case Error! ==> Invalid %s -- RECOVER:%s, STD_JOB_FAILURE_TM:%s, VM_JOB_FAILURE_TM:%s"
-                            % (job_str, job_obj.job_failure_recovered, job_obj.std_job_failure_time, job_obj.vm_job_failure_time))
+        g_log_handler.error("[Broker__] %s get_update_job_duration_for_failure_case Error! ==> Invalid %s -- RECOVER:%s, STD_JOB_FAILURE_TM:%s, VM_JOB_FAILURE_TM:%s" \
+              % (str(Global_Curr_Sim_Clock), job_str, job_obj.job_failure_recovered, job_obj.std_job_failure_time, job_obj.vm_job_failure_time))
         clib.sim_exit()
 
     update_duration = []
@@ -1268,15 +1163,12 @@ def terminate_VM (vm_obj, trigger_clock):
     # remove condition "or len (vm_obj.job_history) < 1" -- this is not relevant due to job failure model
     if vm_obj.status != simgval.gVM_ST_ACTIVE or vm_obj.current_job is not None or vm_obj.current_job_start_clock != -1 or len (vm_obj.job_queue) > 0:
 
-        print "[Broker__] %s terminate_VM - VM (ID:%d) cannot be terminated! (1)" % (str(Global_Curr_Sim_Clock), vm_obj.id)
-        print "[Broker__] %s \t\t vm_obj.status                  : %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(vm_obj.status))
-        print "[Broker__] %s \t\t vm_obj.current_job             : %s" % (str(Global_Curr_Sim_Clock), vm_obj.current_job)
-        print "[Broker__] %s \t\t vm_obj.current_job_start_clock : %s" % (str(Global_Curr_Sim_Clock), vm_obj.current_job_start_clock)
-        print "[Broker__] %s \t\t len(vm_obj.job_queue)          : %s" % (str(Global_Curr_Sim_Clock), len(vm_obj.job_queue))
-        print "[Broker__] %s \t\t len(vm_obj.job_history)        : %s" % (str(Global_Curr_Sim_Clock), len(vm_obj.job_history))
-
-
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + "  VM (ID:%d) cannot be terminated! (1)" % (vm_obj.id))
+        g_log_handler.info("[Broker__] %s terminate_VM - VM (ID:%d) cannot be terminated! (1)" % (str(Global_Curr_Sim_Clock), vm_obj.id))
+        g_log_handler.info("[Broker__] %s \t\t vm_obj.status                  : %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(vm_obj.status)))
+        g_log_handler.info("[Broker__] %s \t\t vm_obj.current_job             : %s" % (str(Global_Curr_Sim_Clock), vm_obj.current_job))
+        g_log_handler.info("[Broker__] %s \t\t vm_obj.current_job_start_clock : %s" % (str(Global_Curr_Sim_Clock), vm_obj.current_job_start_clock))
+        g_log_handler.info("[Broker__] %s \t\t len(vm_obj.job_queue)          : %s" % (str(Global_Curr_Sim_Clock), len(vm_obj.job_queue)))
+        g_log_handler.info("[Broker__] %s \t\t len(vm_obj.job_history)        : %s" % (str(Global_Curr_Sim_Clock), len(vm_obj.job_history)))
 
         # change scale down policy activated flag
         if vm_obj.sd_policy_activated == True:
@@ -1293,35 +1185,27 @@ def terminate_VM (vm_obj, trigger_clock):
         if vm_obj.sd_policy_activated == False:
 
             # not ready for termination --> trigger scale down
-
-            g_log_handler.info(str(Global_Curr_Sim_Clock) + "  VM (ID:%d) cannot be terminated! (2)" % (vm_obj.id))
-            print "[Broker__] %s terminate_VM - VM (ID:%d) cannot be terminated! (2)" % (str(Global_Curr_Sim_Clock), vm_obj.id)
-
+            g_log_handler.info("[Broker__] %s terminate_VM - VM (ID:%d) cannot be terminated! (2)" % (str(Global_Curr_Sim_Clock), vm_obj.id))
             simobj.set_VM_sd_policy_activated_flag (vm_obj, True)
             trigger_vm_scale_down (vm_obj.id)
             return
 
         else:
-
+            
             # ready for termination --> need a termination time validation check.
-
             if Global_Curr_Sim_Clock != trigger_clock + vm_obj.sd_wait_time:
 
-                print "[Broker__] %s terminate_VM Error! => VM (ID:%d) Termination Clock Mismatch - Trigger Clock:%d, SD Wait Time:%d" \
-                      % (str(Global_Curr_Sim_Clock), vm_obj.id, trigger_clock, vm_obj.sd_wait_time)
-                g_log_handler.error(str(Global_Curr_Sim_Clock) + "  terminate_VM Processing Error! => VM (ID:%d) Termination Clock Mismatch - Trigger Clock:%d, SD Wait Time:%d"
-                                    % (vm_obj.id, trigger_clock, vm_obj.sd_wait_time))
-                clib.logwrite_vm_obj(g_log_handler, Global_Curr_Sim_Clock, vm_obj)
+                g_log_handler.error("[Broker__] %s terminate_VM Error! => VM (ID:%d) Termination Clock Mismatch - Trigger Clock:%d, SD Wait Time:%d" \
+                      % (str(Global_Curr_Sim_Clock), vm_obj.id, trigger_clock, vm_obj.sd_wait_time))
+                clib.logwrite_vm_obj(g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), vm_obj)
                 clib.sim_exit()
 
 
     # [d] remove from g_RunningInstances
     if remove_VM_from_Running_VM_Instances (vm_obj.id) == False:
-        print "[Broker__] %s terminate_VM Error! => Remove VM (ID:%s, ST:%s) from g_Running_VM_Instances Error!" \
-              % (str(Global_Curr_Sim_Clock), vm_obj.id, simgval.get_sim_code_str(vm_obj.status))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + "  terminate_VM Error! => Remove VM (ID:%s, ST:%s) from g_Running_VM_Instances Error!" \
-                            % (vm_obj.id, simgval.get_sim_code_str(vm_obj.status)))
-        clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "g_Running_VM_Instances", g_Running_VM_Instances)
+        g_log_handler.error ("[Broker__] %s terminate_VM Error! => Remove VM (ID:%s, ST:%s) from g_Running_VM_Instances Error!" \
+              % (str(Global_Curr_Sim_Clock), vm_obj.id, simgval.get_sim_code_str(vm_obj.status)))
+        clib.logwrite_VM_Instance_Lists(g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "g_Running_VM_Instances", g_Running_VM_Instances)
         clib.sim_exit()
 
     # [e] update vm info
@@ -1386,11 +1270,8 @@ def broker_check_sim_entity_termination ():
     no_stopped_VMs  = len(g_Stopped_VM_Instances)
 
     if (no_recv_jobs < 1 and no_comp_jobs > 0) and (no_running_VMs < 1 and no_stopped_VMs > 0):
-        print "[Broker__] %s Broker can be terminated - Len(rJobs):%d, Len(cJobs):%d, Len(rVMs):%d, Len(sVMs):%d" \
-              %(str(Global_Curr_Sim_Clock), no_recv_jobs, no_comp_jobs, no_running_VMs, no_stopped_VMs)
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + '  Broker can be terminated - Len(rJobs):%d, Len(cJobs):%d, Len(rVMs):%d, Len(sVMs):%d'
-                            % (no_recv_jobs, no_comp_jobs, no_running_VMs, no_stopped_VMs))
-
+        g_log_handler.info ("[Broker__] %s Broker can be terminated - Len(rJobs):%d, Len(cJobs):%d, Len(rVMs):%d, Len(sVMs):%d" \
+              %(str(Global_Curr_Sim_Clock), no_recv_jobs, no_comp_jobs, no_running_VMs, no_stopped_VMs))
         set_broker_sim_entity_term_flag (True)
 
         # sim entity termination procedure - send evt to ask sim event handler for termination
@@ -1398,11 +1279,8 @@ def broker_check_sim_entity_termination ():
         gQ_OUT.put (query_evt)
 
     else:
-        print "[Broker__] %s Broker can NOT be terminated - Len(rJobs):%d, Len(cJobs):%d, Len(rVMs):%d, Len(sVMs):%d" \
-              %(str(Global_Curr_Sim_Clock), no_recv_jobs, no_comp_jobs, no_running_VMs, no_stopped_VMs)
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + '  Broker can NOT be terminated - Len(rJobs):%d, Len(cJobs):%d, Len(rVMs):%d, Len(sVMs):%d'
-                            % (no_recv_jobs, no_comp_jobs, no_running_VMs, no_stopped_VMs))
-
+        g_log_handler.info ("[Broker__] %s Broker can NOT be terminated - Len(rJobs):%d, Len(cJobs):%d, Len(rVMs):%d, Len(sVMs):%d" \
+              %(str(Global_Curr_Sim_Clock), no_recv_jobs, no_comp_jobs, no_running_VMs, no_stopped_VMs))
 
 # gEVT_EXP_TIMER processing
 def broker_send_evt_ack (evt_id, evt_org_code):
@@ -1416,50 +1294,41 @@ def broker_send_evt_ack (evt_id, evt_org_code):
 # Related To Send Event
 def send_job_start_evt_to_iaas (vm):
 
-    curframe = inspect.currentframe()
-    calframe = inspect.getouterframes(curframe, 2)
-    g_log_handler.info ("")
-    g_log_handler.info ("---------------------------------------------------------------------")
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tCaller   : %s, %s:%d" % (calframe[1][3], calframe[1][1], calframe[1][2]))
-    g_log_handler.info ("---------------------------------------------------------------------")
-    g_log_handler.info ("")
-    clib.logwrite_vm_obj(g_log_handler, Global_Curr_Sim_Clock, vm)
-    g_log_handler.info ("")
-
+    #curframe = inspect.currentframe()
+    #calframe = inspect.getouterframes(curframe, 2)
+    #g_log_handler.info ("")
+    #g_log_handler.info ("---------------------------------------------------------------------")
+    #g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tCaller   : %s, %s:%d" % (calframe[1][3], calframe[1][1], calframe[1][2]))
+    #g_log_handler.info ("---------------------------------------------------------------------")
+    #g_log_handler.info ("")
+    #clib.logwrite_vm_obj(g_log_handler, Global_Curr_Sim_Clock, vm)
+    #g_log_handler.info ("")
 
     evt_code = simgval.gEVT_BYPASS
-
     if vm.status != simgval.gVM_ST_ACTIVE:
-        print "[Broker__] %s EVT_SEND ERROR! - EC:%s, VM(ID:%d)'s Status (%s) is NOT Active!" \
-              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm.id, simgval.get_sim_code_str(vm.status))
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_SEND ERROR! - EC:%s, VM(ID:%d) VM.Status (%s) is NOT Active!'
-                            % (simgval.get_sim_code_str(evt_code), vm.id, simgval.get_sim_code_str(vm.status)))
+        g_log_handler.info("[Broker__] %s EVT_SEND ERROR! - EC:%s, VM(ID:%d)'s Status (%s) is NOT Active!" \
+              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm.id, simgval.get_sim_code_str(vm.status)))
         clib.sim_exit()
 
 
     if len (vm.job_queue) < 1:
-        print "[Broker__] %s EVT_SEND ERROR! - EC:%s, VM(ID:%d)'s Job Queue is Empty (Lenth:%d)" \
-              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm.id, len(vm.job_queue))
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_SEND ERROR! - EC:%s, VM(ID:%d) Job Queue is Empty (Lenth:%d)'
-                            % (simgval.get_sim_code_str(evt_code), vm.id, len(vm.job_queue)))
+        g_log_handler.info("[Broker__] %s EVT_SEND ERROR! - EC:%s, VM(ID:%d)'s Job Queue is Empty (Lenth:%d)" \
+              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm.id, len(vm.job_queue)))
         clib.sim_exit()
         return
 
     if vm.current_job is not None:
-        print "[Broker__] %s EVT_SEND ERROR! - EC:%s, VM(ID:%d) has Current Job (ID:%d, NM:%s, ADR:%s (CPU:%s, IO:%s), DL:%d)!" \
-              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm.id, vm.current_job.id, vm.current_job.name, vm.current_job.act_duration_on_VM, vm.current_job.act_cputime_on_VM, vm.current_job.act_nettime_on_VM, vm.current_job.deadline)
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_SEND ERROR! - EC:%s, VM(ID:%d) has Current Job (ID:%d, NM:%s, ADR:%s (CPU:%s, IO:%s), DL:%d)!'
-                            % (simgval.get_sim_code_str(evt_code), vm.id, vm.current_job.id, vm.current_job.name, vm.current_job.act_duration_on_VM, vm.current_job.act_cputime_on_VM, vm.current_job.act_nettime_on_VM, vm.current_job.deadline))
+        g_log_handler.info ("[Broker__] %s EVT_SEND ERROR! - EC:%s, VM(ID:%s) has Current Job (ID:%s, NM:%s, ADR:%s (CPU:%s, IO:%s), DL:%d)!" \
+              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm.id, vm.current_job.id, vm.current_job.name, vm.current_job.act_duration_on_VM, vm.current_job.act_cputime_on_VM, vm.current_job.act_nettime_on_VM, vm.current_job.deadline))
         clib.sim_exit()
 
     # get job id
     try:
         job_id = vm.job_queue[0].id
     except IndexError:
-        print "[Broker__] %s send_job_start_evt_to_iaas Error!: no job_queue[0].id" % (str(Global_Curr_Sim_Clock))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + "  send_job_start_evt_to_iaas Error!: no job_queue[0].id")
+        g_log_handler.info ("[Broker__] %s send_job_start_evt_to_iaas Error!: no job_queue[0].id" % (str(Global_Curr_Sim_Clock)))
         clib.display_vm_obj(Global_Curr_Sim_Clock, vm)
-        clib.logwrite_vm_obj(g_log_handler, Global_Curr_Sim_Clock, vm)
+        clib.logwrite_vm_obj(g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), vm)
         clib.sim_exit()
 
     # create bypass event to event handler (actual destination is iaas)
@@ -1470,49 +1339,33 @@ def send_job_start_evt_to_iaas (vm):
     bpe_data.append (vm)
 
     bpe_evt = clib.make_queue_event (0, g_my_block_id, simgval.gBLOCK_SIM_EVENT_HANDLER, evt_code, evt_sub_code, bpe_data)
-
-    print "[Broker__] %s EVT_SEND - EC:%s[%s], ESC:%s, VMID:%d, JOBID:%d" \
-          %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_r_code), simgval.get_sim_code_str(evt_sub_code), vm.id, job_id)
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_SEND - EC:%s[%s], ESC:%s, VMID:%d, JOBID:%d'
-                        % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_r_code), simgval.get_sim_code_str(evt_sub_code), vm.id, job_id))
-
+    g_log_handler.info("[Broker__] %s EVT_SEND - EC:%s[%s], ESC:%s, VMID:%d, JOBID:%d" \
+          %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_r_code), simgval.get_sim_code_str(evt_sub_code), vm.id, job_id))
     gQ_OUT.put (bpe_evt)
 
 def send_job_restart_evt_to_iaas (vm, cjob_id):
 
     evt_code = simgval.gEVT_BYPASS
-
     if vm.status != simgval.gVM_ST_ACTIVE:
-        print "[Broker__] %s EVT_SEND ERROR! - EC:%s, VM(ID:%d)'s Status (%s) is NOT Active!" \
-              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm.id, simgval.get_sim_code_str(vm.status))
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_SEND ERROR! - EC:%s, VM(ID:%d) VM.Status (%s) is NOT Active!'
-                            % (simgval.get_sim_code_str(evt_code), vm.id, simgval.get_sim_code_str(vm.status)))
+        g_log_handler.error("[Broker__] %s EVT_SEND ERROR! - EC:%s, VM(ID:%d)'s Status (%s) is NOT Active!" \
+              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm.id, simgval.get_sim_code_str(vm.status)))
         clib.sim_exit()
 
 
     if vm.current_job is None:
-        print "[Broker__] %s EVT_SEND ERROR! - EC:%s, VM(ID:%d) has no Current Job (%s)!" \
-              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm.id, vm.current_job)
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_SEND ERROR! - EC:%s, VM(ID:%d) has no Current Job (%s)!'
-                            % (simgval.get_sim_code_str(evt_code), vm.current_job))
+        g_log_handler.info("[Broker__] %s EVT_SEND ERROR! - EC:%s, VM(ID:%d) has no Current Job (%s)!" \
+              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm.id, vm.current_job))
         clib.sim_exit()
     else:
-
         if vm.current_job.id != cjob_id:
-
-            print "[Broker__] %s EVT_SEND ERROR! - EC:%s, VM(ID:%d) - Current Job ID mismatch (Stored:%s, Input:%s)" \
-                  %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm.id, vm.current_job.id, cjob_id)
-            g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_SEND ERROR! - EC:%s, VM(ID:%d) Current Job ID mismatch (Stored:%s, Input:%s)'
-                                % (simgval.get_sim_code_str(evt_code), vm.id, vm.current_job.id, cjob_id))
+            g_log_handler.info("[Broker__] %s EVT_SEND ERROR! - EC:%s, VM(ID:%d) - Current Job ID mismatch (Stored:%s, Input:%s)" \
+                  %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm.id, vm.current_job.id, cjob_id))
             clib.sim_exit()
 
         if vm.current_job.status != simgval.gJOB_ST_FAILED or vm.current_job.job_failure_recovered != True or vm.current_job.std_job_failure_time <= 0 or vm.current_job.vm_job_failure_time <= 0:
-            print "[Broker__] %s EVT_SEND ERROR! - EC:%s, VM(ID:%d) - Current Job (ID:%s) is Invalid for job re-execution (ST:%s, JF_REC:%s, STD_JFT:%s, VM_JFT:%s)" \
-                  %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm.id, vm.current_job.id, simgval.get_sim_code_str(vm.current_job.status), vm.current_job.job_failure_recovered, vm.current_job.std_job_failure_time, vm.current_job.vm_job_failure_time)
-            g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_SEND ERROR! - EC:%s, VM(ID:%d) Current Job (ID:%s) is Invalid for job re-execution (ST:%s, JF_REC:%s, STD_JFT:%s, VM_JFT:%s)'
-                                % (simgval.get_sim_code_str(evt_code), vm.id, vm.current_job.id, simgval.get_sim_code_str(vm.current_job.status), vm.current_job.job_failure_recovered, vm.current_job.std_job_failure_time, vm.current_job.vm_job_failure_time))
+            g_log_handler.info("[Broker__] %s EVT_SEND ERROR! - EC:%s, VM(ID:%d) - Current Job (ID:%s) is Invalid for job re-execution (ST:%s, JF_REC:%s, STD_JFT:%s, VM_JFT:%s)" \
+                  %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm.id, vm.current_job.id, simgval.get_sim_code_str(vm.current_job.status), vm.current_job.job_failure_recovered, vm.current_job.std_job_failure_time, vm.current_job.vm_job_failure_time))
             clib.sim_exit()
-
 
     # create bypass event to event handler (actual destination is iaas)
     evt_r_code = simgval.gEVT_RESTART_JOB
@@ -1522,27 +1375,8 @@ def send_job_restart_evt_to_iaas (vm, cjob_id):
     bpe_data.append (vm)
 
     bpe_evt = clib.make_queue_event (0, g_my_block_id, simgval.gBLOCK_SIM_EVENT_HANDLER, evt_code, evt_sub_code, bpe_data)
-
-    '''
-    for debug - duplicate message send to IaaS - 080614 (UCC Deadline)
-    if bpe_evt[0] >= 3070 and bpe_evt[0] < 3090:
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 2)
-        g_log_handler.info ("")
-        g_log_handler.info ("---------------------------------------------------------------------")
-        g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tEVT_ID   : %d" % (bpe_evt[0]))
-        g_log_handler.info (str(Global_Curr_Sim_Clock) + "\tCaller   : %s, %s:%d" % (calframe[1][3], calframe[1][1], calframe[1][2]))
-        g_log_handler.info ("---------------------------------------------------------------------")
-        g_log_handler.info ("")
-        clib.logwrite_vm_obj(g_log_handler, Global_Curr_Sim_Clock, vm)
-        g_log_handler.info ("")
-    #clib.display_vm_obj(Global_Curr_Sim_Clock, vm)
-    '''
-
-    print "[Broker__] %s EVT_SEND - EC:%s[%s], ESC:%s, VMID:%d, JOBID:%d" \
-          %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_r_code), simgval.get_sim_code_str(evt_sub_code), vm.id, cjob_id)
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_SEND - EC:%s[%s], ESC:%s, VMID:%d, JOBID:%d'
-                        % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_r_code), simgval.get_sim_code_str(evt_sub_code), vm.id, cjob_id))
+    g_log_handler.info ("[Broker__] %s EVT_SEND - EC:%s[%s], ESC:%s, VMID:%d, JOBID:%d" \
+          %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_r_code), simgval.get_sim_code_str(evt_sub_code), vm.id, cjob_id))
 
     gQ_OUT.put (bpe_evt)
 
@@ -1573,13 +1407,11 @@ def broker_evt_sub_vm_scale_down_processing (q_msg):
     evt_code        = q_msg[4] # EVT_CODE
     evt_sub_code    = q_msg[5] # EVT_SUB_CODE
     evt_data        = q_msg[6] # EVT_DATA
-    if evt_sub_code != simgval.gEVT_SUB_VM_SCALE_DOWN:
-        print "[Broker__] %s EVT_CODE (EC:%s, ESC:%s) Error! => " \
-              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + "  EVT_CODE (EC:%s, ESC:%s) Error - %s"
-                            % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), str(q_msg)))
-        clib.sim_exit()
 
+    if evt_sub_code != simgval.gEVT_SUB_VM_SCALE_DOWN:
+        g_log_handler.error ("[Broker__] %s EVT_CODE (EC:%s, ESC:%s) Error! => %s" \
+              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), q_msg))
+        clib.sim_exit()
 
     vm_id = evt_data[0]
     trigger_clock = evt_data[1]
@@ -1602,28 +1434,19 @@ def broker_evt_sub_vm_scale_down_processing (q_msg):
     # [a] vm = get_VM_from_Running_VM_Instances (vm_id)
 
     vm_obj = get_VM_from_Running_VM_Instances(vm_id)
-
     if vm_obj is None:
-         print "[Broker__] %s EVT_CODE (EC:%s, ESC:%s) Processing Error! => Cannot found VM with Input Params (ID:%d)" \
-               % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), vm_id)
-         g_log_handler.error(str(Global_Curr_Sim_Clock) + "  EVT_CODE (EC:%s, ESC:%s) Processing Error! => Cannot found VM with Input Params (ID:%d)" \
-                             % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), vm_id))
+         g_log_handler.error ("[Broker__] %s EVT_CODE (EC:%s, ESC:%s) Processing Error! => Cannot found VM with Input Params (ID:%d)" \
+               % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), vm_id))
          clib.sim_exit()
-
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + "  EVT_CODE (EC:%s, ESC:%s) Processing - broker_evt_sub_vm_scale_down_processing - VM-%d"
-                            % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), vm_obj.id))
-    clib.logwrite_vm_obj(g_log_handler, Global_Curr_Sim_Clock, vm_obj)
 
     # [b] vm_id validation check
     #       1) if no --> error
     if vm_obj.id != vm_id:
-         print "[Broker__] %s EVT_CODE (EC:%s, ESC:%s) Processing Error! => Invalid VM Info (ID:%d) with Input Params (ID:%d)" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), vm_obj.id, vm_id)
-         g_log_handler.error(str(Global_Curr_Sim_Clock) + "  Processing Error! => Invalid VM Info (ID:%d) with Input Params (ID:%d)" % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), vm_obj.id, vm_id))
-         clib.logwrite_vm_obj(g_log_handler, Global_Curr_Sim_Clock, vm_obj)
+         g_log_handler.error ("[Broker__] %s EVT_CODE (EC:%s, ESC:%s) Processing Error! => Invalid VM Info (ID:%d) with Input Params (ID:%d)" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), vm_obj.id, vm_id))
+         clib.logwrite_vm_obj(g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), vm_obj)
          clib.sim_exit()
 
     terminate_VM (vm_obj, trigger_clock)
-
 
     # if every vm is terminated and every job is terminated --> ask sim event handler for this entity's termination
     broker_check_sim_entity_termination ()
@@ -1636,10 +1459,8 @@ def broker_evt_sub_write_sim_trace (q_msg):
     evt_data        = q_msg[6] # EVT_DATA
 
     if evt_sub_code != simgval.gEVT_SUB_WRITE_SIM_TRACE_BROKER:
-        print "[Broker__] %s EVT_CODE (EC:%s, ESC:%s) Error! => " \
-              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + "  EVT_CODE (EC:%s, ESC:%s) Error - %s"
-                            % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), str(q_msg)))
+        g_log_handler.info("[Broker__] %s EVT_CODE (EC:%s, ESC:%s) Error! => %s" \
+              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), q_msg))
         clib.sim_exit()
 
     # procedure
@@ -1660,30 +1481,15 @@ def broker_evt_sub_terminate_vscale_victim (q_msg):
     evt_code        = q_msg[4] # EVT_CODE
     evt_sub_code    = q_msg[5] # EVT_SUB_CODE
     evt_data        = q_msg[6] # EVT_DATA
-
+    
     if evt_sub_code != simgval.gEVT_SUB_TERMINATE_VSCALE_VICTIM:
-        print "[Broker__] %s EVT_CODE (EC:%s, ESC:%s) Error! => " \
-              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + "  EVT_CODE (EC:%s, ESC:%s) Error - %s"
-                            % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), str(q_msg)))
+        g_log_handler.info("[Broker__] %s EVT_CODE (EC:%s, ESC:%s) Error! => %s" \
+              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), q_msg))
         clib.sim_exit()
-
-    """
-    print "evt_id:      ", evt_id
-    print "evt_code:    ", evt_code
-    print "evt_sub_code:", evt_sub_code
-    print "evt_data:    ", evt_data
-    """
 
     victim_vm_id = evt_data[0]
     term_trigger_clock = evt_data[1]
     vscale_vm_type = evt_data[2]
-
-    """
-    print "victim_vm_id =>", victim_vm_id
-    print "term_trigger_clock =>", term_trigger_clock
-    print "vscale_vm_type =>", vscale_vm_type.get_infos()
-    """
 
     """
     [1] get victim vm object
@@ -1702,20 +1508,9 @@ def broker_evt_sub_terminate_vscale_victim (q_msg):
     # [1] get victim vm object and validate victim vm
     victim_vm = get_VM_from_Running_VM_Instances(victim_vm_id)
 
-    """
-    print "\nVictime VM ID =", victim_vm_id
-    clib.display_vm_obj(Global_Curr_Sim_Clock, victim_vm)
-
-    print "victim_vm.is_vscale_victim = ", victim_vm.is_vscale_victim
-    print "victim_vm.vscale_victim_id = ", victim_vm.vscale_victim_id
-    """
-
     if victim_vm.is_vscale_victim is not True:
-
-        print "[Broker__] %s VScale Victime VM Error => Selected Victim VM (ID:%d, TY:%s, PR:$%s, ST:%s, VF:%s, VT:%s)" \
-              % (str(Global_Curr_Sim_Clock), victim_vm.id, victim_vm.type_name, victim_vm.unit_price, simgval.get_sim_code_str(victim_vm.status), victim_vm.is_vscale_victim, victim_vm.vscale_victim_id)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  VScale Victime VM Error => Selected Victim VM (ID:%d, TY:%s, PR:$%s, ST:%s, VF:%s, VT:%s)'
-                            % (victim_vm.id, victim_vm.type_name, victim_vm.unit_price, simgval.get_sim_code_str(victim_vm.status), victim_vm.is_vscale_victim, victim_vm.vscale_victim_id))
+        g_log_handler.error("[Broker__] %s VScale Victime VM Error => Selected Victim VM (ID:%d, TY:%s, PR:$%s, ST:%s, VF:%s, VT:%s)" \
+              % (str(Global_Curr_Sim_Clock), victim_vm.id, victim_vm.type_name, victim_vm.unit_price, simgval.get_sim_code_str(victim_vm.status), victim_vm.is_vscale_victim, victim_vm.vscale_victim_id))
         clib.sim_exit()
 
     # [2] create new vm for vscale and validate victim vm
@@ -1723,32 +1518,22 @@ def broker_evt_sub_terminate_vscale_victim (q_msg):
     new_vscale_vm = get_VM_from_Temp_VM_Instances (new_vscale_vm_id)
 
     if new_vscale_vm.is_vscale_victim is not False or new_vscale_vm.vscale_victim_id != victim_vm_id:
-        print "[Broker__] %s VScale VM Error => Selected VScale VM (ID:%d, TY:%s, PR:$%s, ST:%s, VF:%s, VT:%s)" \
-              % (str(Global_Curr_Sim_Clock), new_vscale_vm.id, new_vscale_vm.type_name, new_vscale_vm.unit_price, simgval.get_sim_code_str(new_vscale_vm.status), new_vscale_vm.is_vscale_victim, new_vscale_vm.vscale_victim_id)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  VScale Victime VM Error => Selected VScale VM (ID:%d, TY:%s, PR:$%s, ST:%s, VF:%s, VT:%s)'
-                            % (new_vscale_vm.id, new_vscale_vm.type_name, new_vscale_vm.unit_price, simgval.get_sim_code_str(new_vscale_vm.status), new_vscale_vm.is_vscale_victim, new_vscale_vm.vscale_victim_id))
+        g_log_handler.error("[Broker__] %s VScale VM Error => Selected VScale VM (ID:%d, TY:%s, PR:$%s, ST:%s, VF:%s, VT:%s)" \
+              % (str(Global_Curr_Sim_Clock), new_vscale_vm.id, new_vscale_vm.type_name, new_vscale_vm.unit_price, simgval.get_sim_code_str(new_vscale_vm.status), new_vscale_vm.is_vscale_victim, new_vscale_vm.vscale_victim_id))
         clib.sim_exit()
-
 
     # [3] job migrate with cpu factor
     # Storage Scaling Debug Point - Done by 10.29.2014
     VM_Job_Migrate (victim_vm, new_vscale_vm, vscale_vm_type)
-
-    """
-    print "\nVscale VM = ", new_vscale_vm_id
-    clib.display_vm_obj (Global_Curr_Sim_Clock, new_vscale_vm)
-    """
 
     # [4] Terminated Victim VM
     terminate_VM (victim_vm, term_trigger_clock)
 
     # [5] Move New One from Temp to Running
     if remove_VM_from_Temp_VM_Instances (new_vscale_vm.id) == False:
-        print "[Broker__] %s Remove VScale VM Error! => Remove VM (ID:%s, ST:%s) from g_Temp_VM_Instances Error!" \
-              % (str(Global_Curr_Sim_Clock), victim_vm.id, simgval.get_sim_code_str(victim_vm.status))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + "  Remove VScale VM Error! => Remove VM (ID:%s, ST:%s) from g_Temp_VM_Instances Error!" \
-                            % (victim_vm.id, simgval.get_sim_code_str(victim_vm.status)))
-        clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "g_Temp_VM_Instances", g_Temp_VM_Instances)
+        g_log_handler.info("[Broker__] %s Remove VScale VM Error! => Remove VM (ID:%s, ST:%s) from g_Temp_VM_Instances Error!" \
+              % (str(Global_Curr_Sim_Clock), victim_vm.id, simgval.get_sim_code_str(victim_vm.status)))
+        clib.logwrite_VM_Instance_Lists(g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "g_Temp_VM_Instances", g_Temp_VM_Instances)
         clib.sim_exit()
 
     insert_VM_into_Running_VM_Instances (new_vscale_vm)
@@ -1765,11 +1550,8 @@ def broker_evt_exp_timer_processing (q_msg):
     evt_sub_code    = q_msg[5] # EVT_SUB_CODE
 
     if evt_code != simgval.gEVT_EXP_TIMER:
-
-        print "[Broker__] %s broker_evt_exp_timer_processing EVT_CODE (%s) Error! => " \
-              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_exp_timer_processing EVT_CODE (%s) Error - %s'
-                            % (simgval.get_sim_code_str(evt_code), str(q_msg)))
+        g_log_handler.error("[Broker__] %s broker_evt_exp_timer_processing EVT_CODE (%s) Error! => %s" \
+              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
 
     if evt_sub_code == simgval.gEVT_SUB_VM_SCALE_DOWN:
@@ -1789,8 +1571,7 @@ def broker_evt_exp_timer_processing (q_msg):
 
     else:
 
-        print "[Broker__] %s EVT_SUB_CODE (%s) Error! => " % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_sub_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_SUB_CODE (%s) ERROR! - %s' % (simgval.get_sim_code_str(evt_sub_code), str(q_msg)))
+        g_log_handler.error("[Broker__] %s EVT_SUB_CODE (%s) Error! => %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_sub_code), q_msg))
         clib.sim_exit()
 
     # step final --> send ack to event handler.
@@ -1807,11 +1588,9 @@ def broker_evt_work_gen_processing (q_msg):
     evt_data        = q_msg[6] # EVT_DATA
 
     if evt_code != simgval.gEVT_WORK_GEN:
-        print "[Broker__] %s broker_evt_work_gen_processing EVT_CODE (%s) Error! => " \
-              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_work_gen_processing EVT_CODE (%s) Error - %s'
-                            % (simgval.get_sim_code_str(evt_code), str(q_msg)))
 
+        g_log_handler.error("[Broker__] %s broker_evt_work_gen_processing EVT_CODE (%s) Error! => %s" \
+              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
         return
 
@@ -1819,9 +1598,8 @@ def broker_evt_work_gen_processing (q_msg):
     evt_real_src = evt_sub_code
 
     if evt_real_src != simgval.gBLOCK_WORKLOAD_GEN:
-        print "[Broker__] %s EVT_REAL_SRC (%d) ERROR! => " % (str(Global_Curr_Sim_Clock), evt_real_src), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_REAL_SRC (%d) ERROR! => %s' % (evt_real_src, str(q_msg)))
 
+        g_log_handler.error("[Broker__] %s EVT_REAL_SRC (%d) ERROR! => %s" % (str(Global_Curr_Sim_Clock), evt_real_src, q_msg))
         clib.sim_exit()
         return
 
@@ -1834,19 +1612,14 @@ def broker_evt_work_gen_processing (q_msg):
     g_job_recv_log_handler.info ('%s\t%d\t%s\t%d\t%d\t%s\t\t%d\t%s\t\t%d\t\t%s'
                                  % (str(Global_Curr_Sim_Clock), job.id, job.name, job.std_duration, job.deadline, simgval.get_sim_code_str(job.input_file_flow_direction), job.input_file_size, simgval.get_sim_code_str(job.output_file_flow_direction), job.output_file_size, job.std_job_failure_time))
 
-    #clib.display_job_obj (Global_Curr_Sim_Clock, job)
     assign_result, vm_id = assign_job (job)
     vm = get_VM_from_Running_VM_Instances(vm_id)
 
     job_str = simobj.get_job_info_str(job)
-    if vm is  None:
-        print "[Broker__] %s VM (ID:%d) not found for %s Assignment!" % (str(Global_Curr_Sim_Clock), vm_id, job_str)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  VM (ID:%d) not found %s Assignment!' % (vm_id, job_str))
-        clib.logwrite_VM_Instance_Lists (g_log_handler, Global_Curr_Sim_Clock, "Current g_Running_VM_Instances", g_Running_VM_Instances)
+    if vm is None:
+        g_log_handler.error("[Broker__] %s VM (ID:%d) not found for %s Assignment!" % (str(Global_Curr_Sim_Clock), vm_id, job_str))
+        clib.logwrite_VM_Instance_Lists (g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "Current g_Running_VM_Instances", g_Running_VM_Instances)
         clib.sim_exit()
-
-    #clib.display_vm_obj (Global_Curr_Sim_Clock, vm)
-    #clib.display_job_obj (Global_Curr_Sim_Clock, job)
 
     # example of assign_results
     # 1) [simgval.gJOB_ASSIGN_TO_NEW_VM, VM OBJ] ==> "New VM (VM.id VM.type_name) and the job is assigned to the VM (the job is added to the queue of the new VM)"
@@ -1880,15 +1653,12 @@ def broker_evt_work_gen_processing (q_msg):
     elif assign_result == simgval.gJOB_ASSIGN_TO_EXISTING_VM:
 
         print "[Broker__] %s %s Assigned to Existing VM (%d)" % (str(Global_Curr_Sim_Clock), simobj.get_job_info_str(job), vm_id)
-
         if vm.current_job is None and vm.status == simgval.gVM_ST_ACTIVE and len(vm.job_queue) == 1:
-            g_log_handler.info(str(Global_Curr_Sim_Clock) + '  len(vm[%d].job_queue) = %d' % (vm.id, len(vm.job_queue)))
-            clib.logwrite_vm_obj(g_log_handler, Global_Curr_Sim_Clock, vm)
             send_job_start_evt_to_iaas (vm)
 
     else:
-        print "[Broker__] %s %s Assign Error!" % (str(Global_Curr_Sim_Clock), job_str)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  %s Assign Error!' % (job_str))
+
+        g_log_handler.error("[Broker__] %s %s Assign Error!" % (str(Global_Curr_Sim_Clock), job_str))
         clib.sim_exit()
 
     # step 2.5: update g_job_log
@@ -1908,21 +1678,14 @@ def broker_evt_noti_vm_activated_processing (q_msg):
     evt_data     = q_msg[6]     # EVT_DATA
 
     if evt_code != simgval.gEVT_NOTI_VM_ACTIVATED:
-        print "[Broker__] %s broker_evt_noti_vm_activated_processing EVT_CODE (%s) Error! => " \
-              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_noti_vm_activated_processing EVT_CODE (%s) Error - %s'
-                            % (simgval.get_sim_code_str(evt_code), str(q_msg)))
-
+        g_log_handler.error("[Broker__] %s broker_evt_noti_vm_activated_processing EVT_CODE (%s) Error! => %s" \
+              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
-        return
 
     evt_real_src = evt_sub_code
     if evt_real_src != simgval.gBLOCK_IAAS:
-        print "[Broker__] %s EVT_REAL_SRC (%d) ERROR! => " % (str(Global_Curr_Sim_Clock), evt_real_src), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_REAL_SRC (%d) ERROR! => %s' % (evt_real_src, str(q_msg)))
-
+        g_log_handler.error("[Broker__] %s EVT_REAL_SRC (%d) ERROR! => %s" % (str(Global_Curr_Sim_Clock), evt_real_src, q_msg))
         clib.sim_exit()
-        return
 
     # receive notification of that vm is activated
     # procedure
@@ -2000,17 +1763,14 @@ def after_job_completion_processing (cvm_id, force_clear_tmr_evt):
     # 7) Get Job Object for the next decision...
     vm_obj = get_VM_from_Running_VM_Instances(cvm_id)
     if vm_obj is None:
-        print "[Broker__] %s VM (ID:%d) not found!" % (str(Global_Curr_Sim_Clock), cvm_id)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  VM (ID:%d) not found!' % (cvm_id))
-        clib.logwrite_VM_Instance_Lists (g_log_handler, Global_Curr_Sim_Clock, "Current g_Running_VM_Instances", g_Running_VM_Instances)
+        g_log_handler.error("[Broker__] %s VM (ID:%d) not found!" % (str(Global_Curr_Sim_Clock), cvm_id))
+        clib.logwrite_VM_Instance_Lists (g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "Current g_Running_VM_Instances", g_Running_VM_Instances)
         clib.sim_exit()
 
     trigger_Vscale, vscale_vm_type, vscale_case = VScale_Trigger_Condition_Check(vm_obj)
-
     if trigger_Vscale is True:
 
-        print "[Broker__] %s Trigger VScale - Current %s will be updated to new VM Type - %s" % (str(Global_Curr_Sim_Clock), vm_obj.get_str_info(), vscale_vm_type.get_infos())
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  Trigger VScale - Current %s will be updated to new VM Type - %s' % (vm_obj.get_str_info(), vscale_vm_type.get_infos()))
+        g_log_handler.info("[Broker__] %s Trigger VScale - Current %s will be updated to new VM Type - %s" % (str(Global_Curr_Sim_Clock), vm_obj.get_str_info(), vscale_vm_type.get_infos()))
 
         # is_vsale_victim should bet set to True
         simobj.set_VM_is_vscale_victim (vm_obj, True)
@@ -2067,31 +1827,18 @@ def broker_evt_job_completed_success_processing (q_msg):
     evt_sub_code = q_msg[5]     # EVT_SUB_CODE (REAL SRC)
     evt_data     = q_msg[6]     # EVT_DATA
 
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Processing - %s'
-                        % (simgval.get_sim_code_str(evt_code), str(q_msg)))
-
     if evt_code != simgval.gEVT_JOB_COMPLETED_SUCCESS:
-        print "[Broker__] %s broker_evt_job_completed_success_processing EVT_CODE (%s) Error! => " \
-              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_job_completed_success_processing EVT_CODE (%s) Error - %s'
-                            % (simgval.get_sim_code_str(evt_code), str(q_msg)))
-
+        g_log_handler.error("[Broker__] %s broker_evt_job_completed_success_processing EVT_CODE (%s) Error! => %s" \
+              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
-        return
 
     evt_real_src = evt_sub_code
     if evt_real_src != simgval.gBLOCK_IAAS:
-        print "[Broker__] %s EVT_REAL_SRC (%d) ERROR! => " % (str(Global_Curr_Sim_Clock), evt_real_src), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_REAL_SRC (%d) ERROR! => %s' % (evt_real_src, str(q_msg)))
-
+        g_log_handler.error("[Broker__] %s EVT_REAL_SRC (%d) ERROR! => %s" % (str(Global_Curr_Sim_Clock), evt_real_src, q_msg))
         clib.sim_exit()
-        return
 
     cjob_id = evt_data[0]
     cvm_id = evt_data[1]
-
-    #clib.display_vm_obj(Global_Curr_Sim_Clock, g_Running_VM_Instances[0])
-    #clib.display_job_obj(Global_Curr_Sim_Clock, g_Received_Jobs[0])
 
     # Procedure
     # 0-a) Find VM from g_Running_VM_Instances based on cvm_id
@@ -2109,24 +1856,15 @@ def broker_evt_job_completed_success_processing (q_msg):
 
     # 0-a) Find VM from g_Running_VM_Instances based on cvm_id
     vm = get_VM_from_Running_VM_Instances (cvm_id)
-
     if vm is None:
-        print "[Broker__] %s broker_evt_job_completed_success_processing Error! - Cannot find VM (ID: %d) from g_Running_VM_Instances(LEN:%d)" \
-              % (str(Global_Curr_Sim_Clock), cvm_id, len(g_Running_VM_Instances))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_job_completed_success_processing Error! - Cannot find VM (ID: %d) from g_Running_VM_Instances(LEN:%d)'
-                            % (cvm_id, len(g_Running_VM_Instances)))
-        clib.logwrite_VM_Instance_Lists (g_log_handler, Global_Curr_Sim_Clock, "Current g_Running_VM_Instances", g_Running_VM_Instances)
+        g_log_handler.error ("[Broker__] %s broker_evt_job_completed_success_processing Error! - Cannot find VM (ID: %d) from g_Running_VM_Instances(LEN:%d)" % (str(Global_Curr_Sim_Clock), cvm_id, len(g_Running_VM_Instances)))
+        clib.logwrite_VM_Instance_Lists (g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "Current g_Running_VM_Instances", g_Running_VM_Instances)
         clib.sim_exit()
-        return
 
     # 0-b) check current job status
     if vm.current_job.status != simgval.gJOB_ST_COMPLETED:
-        print "[Broker__] %s broker_evt_job_completed_success_processing Error! - VM (ID:%d)'s Current Job [%s] Status has to be %s" \
-              % (str(Global_Curr_Sim_Clock), vm.id, simobj.get_job_info_str(vm.current_job), simgval.get_sim_code_str(simgval.gJOB_ST_COMPLETED))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + "  broker_evt_job_completed_success_processing Error! - VM (ID:%d)'s Current Job [%s] Status has to be %s"
-                            % (vm.id, simobj.get_job_info_str(vm.current_job), simgval.get_sim_code_str(simgval.gJOB_ST_COMPLETED)))
+        g_log_handler.error("[Broker__] %s broker_evt_job_completed_success_processing Error! - VM (ID:%d)'s Current Job [%s] Status has to be %s"  % (str(Global_Curr_Sim_Clock), vm.id, simobj.get_job_info_str(vm.current_job), simgval.get_sim_code_str(simgval.gJOB_ST_COMPLETED)))
         clib.sim_exit()
-        return
 
     # 0-c) insert the current_job into Job History
     simobj.insert_job_into_VM_job_history (vm, vm.current_job)
@@ -2134,23 +1872,16 @@ def broker_evt_job_completed_success_processing (q_msg):
     # [f] update VM' current job to None
     upd_res = simobj.set_VM_current_job (Global_Curr_Sim_Clock, vm, None)
     if upd_res is False:
-        print "[Broker__] %s broker_evt_job_completed_success_processing Update VM Current Job (%s) Error!" \
-              % (str(Global_Curr_Sim_Clock), str(vm.current_job))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + "  broker_evt_job_completed_success_processing Update VM Current Job (%s) Error!"
-                            % (simgval.get_sim_code_str(evt_code), str(c_vm.current_job)))
+        g_log_handler.error("[Broker__] %s broker_evt_job_completed_success_processing Update VM Current Job (%s) Error!" % (str(Global_Curr_Sim_Clock), str(vm.current_job)))
         clib.sim_exit()
 
     # 1) Find Job from g_Received_Jobs based on cjob_id
     job = get_job_from_ReceivedJobList (cjob_id, cvm_id)
-    if job is None:
-        print "[Broker__] %s broker_evt_job_completed_success_processing Error! - Cannot find the job(ID: %d) from g_Received_Jobs(LEN:%d)" \
-              % (str(Global_Curr_Sim_Clock), cjob_id, len(g_Received_Jobs))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_job_completed_success_processing Error! - Cannot find the job(ID: %d) from g_Received_Jobs(LEN:%d)'
-                            % (cjob_id, len(g_Received_Jobs)))
-        clib.logwrite_JobList (g_log_handler, Global_Curr_Sim_Clock, "Current g_Received_Jobs", g_Received_Jobs)
-        clib.sim_exit()
-        return
 
+    if job is None:
+        g_log_handler.error("[Broker__] %s broker_evt_job_completed_success_processing Error! - Cannot find the job(ID: %d) from g_Received_Jobs(LEN:%d)" % (str(Global_Curr_Sim_Clock), cjob_id, len(g_Received_Jobs)))
+        clib.logwrite_JobList (g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "Current g_Received_Jobs", g_Received_Jobs)
+        clib.sim_exit()
 
     # 2) Check Job Status and other values (time)
     if job.status != simgval.gJOB_ST_COMPLETED \
@@ -2158,26 +1889,20 @@ def broker_evt_job_completed_success_processing (q_msg):
         or job.time_start is None \
         or job.time_complete is None:
 
-        print "[Broker__] %s broker_evt_job_completed_success_processing Error! - Invalid Job (ID:%d, ST:%s, TA:%s, TS:%s, TC:%s)" \
-              % (str(Global_Curr_Sim_Clock), job.id, simgval.get_sim_code_str(job.status), str(job.time_assign), str(job.time_start), str(job.time_complete))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_job_completed_success_processing Error! - Invalid Job (ID:%d, ST:%s, TA:%s, TS:%s, TC:%s)'
-                            % (job.id, simgval.get_sim_code_str(job.status), str(job.time_assign), str(job.time_start), str(job.time_complete)))
+        g_log_handler.error("[Broker__] %s broker_evt_job_completed_success_processing Error! - Invalid Job (ID:%d, ST:%s, TA:%s, TS:%s, TC:%s)" \
+              % (str(Global_Curr_Sim_Clock), job.id, simgval.get_sim_code_str(job.status), str(job.time_assign), str(job.time_start), str(job.time_complete)))
         clib.sim_exit()
-        return
 
     # 4) Check VM Status and other values (current job, job history)
     if vm.status != simgval.gVM_ST_ACTIVE \
         or vm.current_job is not None \
         or vm.job_history[-1].id != job.id:
 
-        print "[Broker__] %s broker_evt_job_completed_success_processing Error! - Invalid VM (ID:%d, IID:%s, ST:%s, CJ:%s, JHL:%d, JH[-1]:%d, JID:%d)" \
-              % (str(Global_Curr_Sim_Clock), vm.id, vm.instance_id, simgval.get_sim_code_str(vm.status), str(vm.current_job), len(vm.job_history), vm.job_history[-1].id, job.id)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_job_completed_success_processing Error! - Invalid VM (ID:%d, IID:%s, ST:%s, CJ:%s, JHL:%d, JH[-1]:%d, JID:%d)'
-                            % (vm.id, vm.instance_id, simgval.get_sim_code_str(vm.status), str(vm.current_job), len(vm.job_history), vm.job_history[-1].id, job.id))
+        g_log_handler.error("[Broker__] %s broker_evt_job_completed_success_processing Error! - Invalid VM (ID:%d, IID:%s, ST:%s, CJ:%s, JHL:%d, JH[-1]:%d, JID:%d)" \
+              % (str(Global_Curr_Sim_Clock), vm.id, vm.instance_id, simgval.get_sim_code_str(vm.status), str(vm.current_job), len(vm.job_history), vm.job_history[-1].id, job.id))
 
         clib.display_vm_obj(Global_Curr_Sim_Clock, vm)
         clib.sim_exit()
-        return
 
     # 5) move the job from g_Received_Jobs to g_Completed JObs
     insert_job_into_CompletedJobList (job)
@@ -2203,25 +1928,15 @@ def broker_evt_job_completed_failure_processing (q_msg):
     evt_sub_code = q_msg[5]     # EVT_SUB_CODE (REAL SRC)
     evt_data     = q_msg[6]     # EVT_DATA
 
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Processing - %s'
-                        % (simgval.get_sim_code_str(evt_code), str(q_msg)))
-
     if evt_code != simgval.gEVT_JOB_COMPLETED_FAILURE:
-        print "[Broker__] %s broker_evt_job_completed_failure_processing EVT_CODE (%s) Error! => " \
-              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_job_completed_failure_processing EVT_CODE (%s) Error - %s'
-                            % (simgval.get_sim_code_str(evt_code), str(q_msg)))
-
+        g_log_handler.error("[Broker__] %s broker_evt_job_completed_failure_processing EVT_CODE (%s) Error! => %s" \
+              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
-        return
 
     evt_real_src = evt_sub_code
     if evt_real_src != simgval.gBLOCK_IAAS:
-        print "[Broker__] %s EVT_REAL_SRC (%d) ERROR! => " % (str(Global_Curr_Sim_Clock), evt_real_src), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_REAL_SRC (%d) ERROR! => %s' % (evt_real_src, str(q_msg)))
-
+        g_log_handler.error("[Broker__] %s EVT_REAL_SRC (%d) ERROR! => %s" % (str(Global_Curr_Sim_Clock), evt_real_src, q_msg))
         clib.sim_exit()
-        return
 
     cjob_id = evt_data[0]
     cvm_id = evt_data[1]
@@ -2230,22 +1945,15 @@ def broker_evt_job_completed_failure_processing (q_msg):
     vm = get_VM_from_Running_VM_Instances (cvm_id)
 
     if vm is None:
-        print "[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Cannot find VM (ID: %d) from g_Running_VM_Instances(LEN:%d)" \
-              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), cvm_id, len(g_Running_VM_Instances))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_job_completed_failure_processing (%s) Error! - Cannot find VM (ID: %d) from g_Running_VM_Instances(LEN:%d)'
-                            % (simgval.get_sim_code_str(g_sim_conf.job_failure_policy), cvm_id, len(g_Running_VM_Instances)))
-        clib.logwrite_VM_Instance_Lists (g_log_handler, Global_Curr_Sim_Clock, "Current g_Running_VM_Instances", g_Running_VM_Instances)
+        g_log_handler.error("[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Cannot find VM (ID: %d) from g_Running_VM_Instances(LEN:%d)" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), cvm_id, len(g_Running_VM_Instances)))
+        clib.logwrite_VM_Instance_Lists (g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "Current g_Running_VM_Instances", g_Running_VM_Instances)
         clib.sim_exit()
-        return
 
     # 0-b) check current job status
     if vm.current_job.status != simgval.gJOB_ST_FAILED:
-        print "[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - VM (ID:%d)'s Current Job [%s] Status has to be %s" \
-              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), vm.id, simobj.get_job_info_str(vm.current_job), simgval.get_sim_code_str(simgval.gJOB_ST_COMPLETED))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + "  broker_evt_job_completed_failure_processing (%s) Error! - VM (ID:%d)'s Current Job [%s] Status has to be %s"
-                            % (simgval.get_sim_code_str(g_sim_conf.job_failure_policy), vm.id, simobj.get_job_info_str(vm.current_job), simgval.get_sim_code_str(simgval.gJOB_ST_COMPLETED)))
+        g_log_handler.error("[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - VM (ID:%d)'s Current Job [%s] Status has to be %s" \
+              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), vm.id, simobj.get_job_info_str(vm.current_job), simgval.get_sim_code_str(simgval.gJOB_ST_COMPLETED)))
         clib.sim_exit()
-        return
 
     if g_sim_conf.job_failure_policy == simgval.gJFP1_IGNORE_JOB:
 
@@ -2255,23 +1963,18 @@ def broker_evt_job_completed_failure_processing (q_msg):
         # [f] update VM' current job to None
         upd_res = simobj.set_VM_current_job (Global_Curr_Sim_Clock, vm, None)
         if upd_res is False:
-            print "[Broker__] %s broker_evt_job_completed_failure_processing (%s) Update VM Current Job (%s) Error!" \
-                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), str(vm.current_job))
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + "  broker_evt_job_completed_failure_processing (%s) Update VM Current Job (%s) Error!"
-                                % (simgval.get_sim_code_str(g_sim_conf.job_failure_policy), str(c_vm.current_job)))
+            g_log_handler.error("[Broker__] %s broker_evt_job_completed_failure_processing (%s) Update VM Current Job (%s) Error!" \
+                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), str(vm.current_job)))
             clib.sim_exit()
 
         # 1) Find Job from g_Received_Jobs based on cjob_id
         job = get_job_from_ReceivedJobList (cjob_id, cvm_id)
 
         if job is None:
-            print "[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Cannot find the job(ID: %d) from g_Received_Jobs(LEN:%d)" \
-                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), cjob_id, len(g_Received_Jobs))
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_job_completed_failure_processing (%s) Error! - Cannot find the job(ID: %d) from g_Received_Jobs(LEN:%d)'
-                                % (simgval.get_sim_code_str(g_sim_conf.job_failure_policy), cjob_id, len(g_Received_Jobs)))
-            clib.logwrite_JobList (g_log_handler, Global_Curr_Sim_Clock, "Current g_Received_Jobs", g_Received_Jobs)
+            g_log_handler.error("[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Cannot find the job(ID: %d) from g_Received_Jobs(LEN:%d)" \
+                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), cjob_id, len(g_Received_Jobs)))
+            clib.logwrite_JobList (g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "Current g_Received_Jobs", g_Received_Jobs)
             clib.sim_exit()
-            return
 
         # 2) Check Job Status and other values (time)
         if job.status != simgval.gJOB_ST_FAILED \
@@ -2279,27 +1982,19 @@ def broker_evt_job_completed_failure_processing (q_msg):
             or job.time_start is None \
             or job.time_complete is None:
 
-            print "[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Invalid Job (ID:%d, ST:%s, TA:%s, TS:%s, TC:%s)" \
-                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), job.id, simgval.get_sim_code_str(job.status), str(job.time_assign), str(job.time_start), str(job.time_complete))
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_job_completed_failure_processing (%s) Error! - Invalid Job (ID:%d, ST:%s, TA:%s, TS:%s, TC:%s)'
-                                % (simgval.get_sim_code_str(g_sim_conf.job_failure_policy), job.id, simgval.get_sim_code_str(job.status), str(job.time_assign), str(job.time_start), str(job.time_complete)))
+            g_log_handler.error("[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Invalid Job (ID:%d, ST:%s, TA:%s, TS:%s, TC:%s)" \
+                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), job.id, simgval.get_sim_code_str(job.status), str(job.time_assign), str(job.time_start), str(job.time_complete)))
             clib.sim_exit()
-            return
-
 
         # 4) Check VM Status and other values (current job, job history)
         if vm.status != simgval.gVM_ST_ACTIVE \
             or vm.current_job is not None \
             or vm.job_history[-1].id != job.id:
 
-            print "[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Invalid VM (ID:%d, IID:%s, ST:%s, CJ:%s, JHL:%d, JH[-1]:%d, JID:%d)" \
-                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy),vm.id, vm.instance_id, simgval.get_sim_code_str(vm.status), str(vm.current_job), len(vm.job_history), vm.job_history[-1].id, job.id)
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_job_completed_failure_processing (%s) Error! - Invalid VM (ID:%d, IID:%s, ST:%s, CJ:%s, JHL:%d, JH[-1]:%d, JID:%d)'
-                                % (simgval.get_sim_code_str(g_sim_conf.job_failure_policy), vm.id, vm.instance_id, simgval.get_sim_code_str(vm.status), str(vm.current_job), len(vm.job_history), vm.job_history[-1].id, job.id))
-
+            g_log_handler.error("[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Invalid VM (ID:%d, IID:%s, ST:%s, CJ:%s, JHL:%d, JH[-1]:%d, JID:%d)" \
+                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy),vm.id, vm.instance_id, simgval.get_sim_code_str(vm.status), str(vm.current_job), len(vm.job_history), vm.job_history[-1].id, job.id))
             clib.display_vm_obj(Global_Curr_Sim_Clock, vm)
             clib.sim_exit()
-            return
 
         # update job info related to job failure - on 11/05/2014
         # [a] job_failure_recovered ==> True
@@ -2321,20 +2016,11 @@ def broker_evt_job_completed_failure_processing (q_msg):
     elif g_sim_conf.job_failure_policy == simgval.gJFP2_RE_EXECUTE_JOB:
 
         job = get_job_from_ReceivedJobList_by_JobID (cjob_id)
-
-        # for debug
-        print ""
-        print ""
-        clib.display_job_obj(Global_Curr_Sim_Clock, job)
-
         if job is None:
-            print "[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Cannot find the job(ID: %d) from g_Received_Jobs(LEN:%d)" \
-                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), cjob_id, len(g_Received_Jobs))
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_job_completed_failure_processing (%s) Error! - Cannot find the job(ID: %d) from g_Received_Jobs(LEN:%d)'
-                                % (simgval.get_sim_code_str(g_sim_conf.job_failure_policy), cjob_id, len(g_Received_Jobs)))
-            clib.logwrite_JobList (g_log_handler, Global_Curr_Sim_Clock, "Current g_Received_Jobs", g_Received_Jobs)
+            g_log_handler.error("[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Cannot find the job(ID: %d) from g_Received_Jobs(LEN:%d)" \
+                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), cjob_id, len(g_Received_Jobs)))
+            clib.logwrite_JobList (g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "Current g_Received_Jobs", g_Received_Jobs)
             clib.sim_exit()
-            return
 
         # 2) Check Job Status and other values (time)
         if job.status != simgval.gJOB_ST_FAILED \
@@ -2342,42 +2028,30 @@ def broker_evt_job_completed_failure_processing (q_msg):
             or job.time_start is None \
             or job.time_complete is None:
 
-            print "[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Invalid Job (ID:%d, ST:%s, TA:%s, TS:%s, TC:%s)" \
-                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), job.id, simgval.get_sim_code_str(job.status), str(job.time_assign), str(job.time_start), str(job.time_complete))
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_job_completed_failure_processing (%s) Error! - Invalid Job (ID:%d, ST:%s, TA:%s, TS:%s, TC:%s)'
-                                % (simgval.get_sim_code_str(g_sim_conf.job_failure_policy), job.id, simgval.get_sim_code_str(job.status), str(job.time_assign), str(job.time_start), str(job.time_complete)))
+            g_log_handler.error("[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Invalid Job (ID:%d, ST:%s, TA:%s, TS:%s, TC:%s)" \
+                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), job.id, simgval.get_sim_code_str(job.status), str(job.time_assign), str(job.time_start), str(job.time_complete)))
             clib.sim_exit()
-            return
 
         # set failure recover is true
         simobj.set_Job_job_failure_recovered (job, True)
         # set current job start time and last job complete time
-
         simobj.set_VM_job_clock (vm, Global_Curr_Sim_Clock, -1)
 
         # re-insert job into the VM && restore original job assignment -- due to insert_job_into_VM_Job_Queue update job assign time to current
         org_job_assign_time = job.time_assign
         simobj.set_Job_time_assign (job, org_job_assign_time)
-
         send_job_restart_evt_to_iaas (vm, cjob_id)
-
         print "[Broker__] %s Job Restarted! - ID:%d, JN:%s, ADR:%d (CPU:%s, IO:%s), DL:%s, TD:%d, VM_ID:%s,%s, VM_TYPE:%s,%s" \
                   % (str(Global_Curr_Sim_Clock), job.id, job.name, job.act_duration_on_VM, job.act_cputime_on_VM, job.act_nettime_on_VM, job.deadline, (job.time_complete-job.time_create), job.VM_id, vm.id, job.VM_type, vm.type_name)
-        #clib.sim_exit()
-
 
     elif g_sim_conf.job_failure_policy == simgval.gJFP3_MOVE_JOB_TO_THE_END_OF_QUEUE:
-
-        clib.display_vm_obj(Global_Curr_Sim_Clock, vm)
 
         # [f] update VM' current job to None
         upd_res = simobj.set_VM_current_job (Global_Curr_Sim_Clock, vm, None)
 
         if upd_res is False:
-            print "[Broker__] %s broker_evt_job_completed_failure_processing (%s) - Update VM Current Job (%s) Error!" \
-                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), str(vm.current_job))
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + "  broker_evt_job_completed_failure_processing (%s) - Update VM Current Job (%s) Error!"
-                                % (simgval.get_sim_code_str(g_sim_conf.job_failure_policy), str(c_vm.current_job)))
+            g_log_handler.error("[Broker__] %s broker_evt_job_completed_failure_processing (%s) - Update VM Current Job (%s) Error!" \
+                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), str(vm.current_job)))
             clib.sim_exit()
 
         # get job by using get_job_from_ReceivedJobList_by_JobID
@@ -2385,19 +2059,11 @@ def broker_evt_job_completed_failure_processing (q_msg):
         # this is because the failed to will be re-inserted into VM's job queue -- the job should stay in the g_Received_Jobs
         job = get_job_from_ReceivedJobList_by_JobID (cjob_id)
 
-        # for debug
-        print ""
-        print ""
-        clib.display_job_obj(Global_Curr_Sim_Clock, job)
-
         if job is None:
-            print "[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Cannot find the job(ID: %d) from g_Received_Jobs(LEN:%d)" \
-                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), cjob_id, len(g_Received_Jobs))
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_job_completed_failure_processing (%s) Error! - Cannot find the job(ID: %d) from g_Received_Jobs(LEN:%d)'
-                                % (simgval.get_sim_code_str(g_sim_conf.job_failure_policy), cjob_id, len(g_Received_Jobs)))
-            clib.logwrite_JobList (g_log_handler, Global_Curr_Sim_Clock, "Current g_Received_Jobs", g_Received_Jobs)
+            g_log_handler.error("[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Cannot find the job(ID: %d) from g_Received_Jobs(LEN:%d)" \
+                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), cjob_id, len(g_Received_Jobs)))
+            clib.logwrite_JobList (g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "Current g_Received_Jobs", g_Received_Jobs)
             clib.sim_exit()
-            return
 
         # 2) Check Job Status and other values (time)
         if job.status != simgval.gJOB_ST_FAILED \
@@ -2405,36 +2071,24 @@ def broker_evt_job_completed_failure_processing (q_msg):
             or job.time_start is None \
             or job.time_complete is None:
 
-            print "[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Invalid Job (ID:%d, ST:%s, TA:%s, TS:%s, TC:%s)" \
-                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), job.id, simgval.get_sim_code_str(job.status), str(job.time_assign), str(job.time_start), str(job.time_complete))
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_job_completed_failure_processing (%s) Error! - Invalid Job (ID:%d, ST:%s, TA:%s, TS:%s, TC:%s)'
-                                % (simgval.get_sim_code_str(g_sim_conf.job_failure_policy), job.id, simgval.get_sim_code_str(job.status), str(job.time_assign), str(job.time_start), str(job.time_complete)))
+            g_log_handler.error("[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Invalid Job (ID:%d, ST:%s, TA:%s, TS:%s, TC:%s)" \
+                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), job.id, simgval.get_sim_code_str(job.status), str(job.time_assign), str(job.time_start), str(job.time_complete)))
             clib.sim_exit()
-            return
-
 
         # check vm status #1: (st == active and current job == none)
         if vm.status != simgval.gVM_ST_ACTIVE or vm.current_job is not None:
-            print "[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Invalid VM (ID:%d, IID:%s, ST:%s, CJ:%s, JHL:%d, JH[-1]:%d, JID:%d)" \
-                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), vm.id, vm.instance_id, simgval.get_sim_code_str(vm.status), str(vm.current_job), len(vm.job_history), vm.job_history[-1].id, job.id)
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_job_completed_failure_processing (%s) Error! - Invalid VM (ID:%d, IID:%s, ST:%s, CJ:%s, JHL:%d, JH[-1]:%d, JID:%d)'
-                                % (simgval.get_sim_code_str(g_sim_conf.job_failure_policy), vm.id, vm.instance_id, simgval.get_sim_code_str(vm.status), str(vm.current_job), len(vm.job_history), vm.job_history[-1].id, job.id))
-
+            g_log_handler.error("[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Invalid VM (ID:%d, IID:%s, ST:%s, CJ:%s, JHL:%d, JH[-1]:%d, JID:%d)" \
+                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), vm.id, vm.instance_id, simgval.get_sim_code_str(vm.status), str(vm.current_job), len(vm.job_history), vm.job_history[-1].id, job.id))
             clib.display_vm_obj(Global_Curr_Sim_Clock, vm)
             clib.sim_exit()
-            return
 
         # check vm status #2: this is different from other cases for job complete or failure processing
         #                   : vm.job_history[-1].id should be different from job.id --> the (failed) job will be reinserted into VM's job queue
         if len(vm.job_history) > 0 and vm.job_history[-1].id == job.id:
-            print "[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Invalid VM (ID:%d, IID:%s, ST:%s, CJ:%s, JHL:%d, JH[-1]:%d, JID:%d)" \
-                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), vm.id, vm.instance_id, simgval.get_sim_code_str(vm.status), str(vm.current_job), len(vm.job_history), vm.job_history[-1].id, job.id)
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_evt_job_completed_failure_processing (%s) Error! - Invalid VM (ID:%d, IID:%s, ST:%s, CJ:%s, JHL:%d, JH[-1]:%d, JID:%d)'
-                                % (simgval.get_sim_code_str(g_sim_conf.job_failure_policy), vm.id, vm.instance_id, simgval.get_sim_code_str(vm.status), str(vm.current_job), len(vm.job_history), vm.job_history[-1].id, job.id))
-
+            g_log_handler.error("[Broker__] %s broker_evt_job_completed_failure_processing (%s) Error! - Invalid VM (ID:%d, IID:%s, ST:%s, CJ:%s, JHL:%d, JH[-1]:%d, JID:%d)" \
+                  % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_failure_policy), vm.id, vm.instance_id, simgval.get_sim_code_str(vm.status), str(vm.current_job), len(vm.job_history), vm.job_history[-1].id, job.id))
             clib.display_vm_obj(Global_Curr_Sim_Clock, vm)
             clib.sim_exit()
-            return
 
         # update job info related to job failure - on 11/05/2014
         # [a] job_failure_recovered ==> True
@@ -2448,16 +2102,11 @@ def broker_evt_job_completed_failure_processing (q_msg):
 
         print "[Broker__] %s Job Reassigned! - ID:%d, JN:%s, ADR:%d (CPU:%s, IO:%s), DL:%s, TD:%d, VM_ID:%s,%s, VM_TYPE:%s,%s" \
                   % (str(Global_Curr_Sim_Clock), job.id, job.name, job.act_duration_on_VM, job.act_cputime_on_VM, job.act_nettime_on_VM, job.deadline, (job.time_complete-job.time_create), job.VM_id, vm.id, job.VM_type, vm.type_name)
-        #clib.sim_exit()
-
 
     else:
 
         print "need to implement - %s, %s" % (simgval.get_sim_code_str(g_sim_conf.job_failure_policy), simgval.get_sim_code_str(g_sim_conf.job_failure_policy))
         clib.sim_exit()
-
-
-    print g_sim_conf.vm_scale_down_policy
 
     if g_sim_conf.vm_scale_down_policy == simgval.gPOLICY_VM_SCALEDOWN_HOUR or g_sim_conf.vm_scale_down_policy == simgval.gPOLICY_VM_SCALEDOWN_MIN:
         force_clear_tmr_evt = False
@@ -2479,24 +2128,13 @@ def broker_evt_success_clear_sd_tmr_event (q_msg):
     evt_code    = q_msg[4]      # EVT_CODE
     evt_data    = q_msg[6]      # EVT_DATA
 
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Processing - %s'
-                        % (simgval.get_sim_code_str(evt_code), str(q_msg)))
-
     if evt_code != simgval.gEVT_SUCCESS_CLEAR_SD_TMR_EVENT:
-        print "[Broker__] %s EVT_CODE (%s) Error! => " \
-              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Error - %s'
-                            % (simgval.get_sim_code_str(evt_code), str(q_msg)))
-
+        g_log_handler.error("[Broker__] %s EVT_CODE (%s) Error! => %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
-        return
 
     if evt_src != simgval.gBLOCK_SIM_EVENT_HANDLER:
-        print "[Broker__] %s EVT_SRC (%d) ERROR! => " % (str(Global_Curr_Sim_Clock), evt_src), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_SRC (%d) ERROR! => %s' % (evt_src, str(q_msg)))
-
+        g_log_handler.error("[Broker__] %s EVT_SRC (%d) ERROR! => %s" % (str(Global_Curr_Sim_Clock), evt_src, q_msg))
         clib.sim_exit()
-        return
 
     vm_obj = evt_data[0]
     exception_flag = evt_data[1]
@@ -2507,22 +2145,15 @@ def broker_evt_success_clear_sd_tmr_event (q_msg):
         # exception flag is used to handle a tricky case - e.g. job duration is changed in IaaS level due to I/O issue
         # added this on 10/27/2014 - for storage simulation.
         if use_sd_policy_activated_flag(exception_flag) != True:
-            print "[Broker__] %s EVT_CODE (%s) Error! => Invalid Access to this Lib -" \
-                  %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Error =>  => Invalid Access to this Lib - %s'
-                                % (simgval.get_sim_code_str(evt_code), str(q_msg)))
-
+            g_log_handler.error("[Broker__] %s EVT_CODE (%s) Error! => Invalid Access to this Lib - %s" \
+                  %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
             clib.sim_exit()
-            return
 
         if vm_obj.sd_policy_activated != True:
-            print "[Broker__] %s EVT_CODE (%s) Error! => Invalid VM (ID: %d) Status -" \
-                  %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm_obj.id), q_msg
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Error =>  => Invalid VM (ID: %d) Status - %s'
-                                % (simgval.get_sim_code_str(evt_code), vm_obj.id, str(q_msg)))
-            clib.logwrite_vm_obj(g_log_handler, Global_Curr_Sim_Clock, vm_obj)
+            g_log_handler.error("[Broker__] %s EVT_CODE (%s) Error! => Invalid VM (ID: %d) Status - %s" \
+                  %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm_obj.id, q_msg))
+            clib.logwrite_vm_obj(g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), vm_obj)
             clib.sim_exit()
-            return
 
         # [1] set vm sd policy activated flag to False
         simobj.set_VM_sd_policy_activated_flag(vm_obj, False)
@@ -2540,28 +2171,15 @@ def broker_evt_debug_display_job_obj (q_msg):
     evt_code    = q_msg[4]      # EVT_CODE
     evt_data    = q_msg[6]      # EVT_DATA
 
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Processing - %s'
-                        % (simgval.get_sim_code_str(evt_code), str(q_msg)))
-
     if evt_code != simgval.gEVT_DEBUG_DISPLAY_JOB_OBJ:
-        print "[Broker__] %s EVT_CODE (%s) Error! => " \
-              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Error - %s'
-                            % (simgval.get_sim_code_str(evt_code), str(q_msg)))
-
+        g_log_handler.error("[Broker__] %s EVT_CODE (%s) Error! => %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
-        return
-
 
     if evt_src != simgval.gBLOCK_SIM_EVENT_HANDLER:
-        print "[Broker__] %s EVT_SRC (%d) ERROR! => " % (str(Global_Curr_Sim_Clock), evt_src), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_SRC (%d) ERROR! => %s' % (evt_src, str(q_msg)))
-
+        g_log_handler.error("[Broker__] %s EVT_SRC (%d) ERROR! => %s" % (str(Global_Curr_Sim_Clock), evt_src, q_msg))
         clib.sim_exit()
-        return
 
     job_id = evt_data[0]
-
     job_obj = get_job_from_ReceivedJobList_by_JobID (job_id)
     clib.display_job_obj(Global_Curr_Sim_Clock, job_obj)
 
@@ -2574,31 +2192,18 @@ def broker_evt_debug_display_job_obj (q_msg):
 
 def broker_evt_job_duration_changed (q_msg):
 
-
     evt_id      = q_msg[0]      # EVT_ID
     evt_src     = q_msg[2]      # EVT_SRC
     evt_code    = q_msg[4]      # EVT_CODE
     evt_data    = q_msg[6]      # EVT_DATA
 
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Processing - %s'
-                        % (simgval.get_sim_code_str(evt_code), str(q_msg)))
-
     if evt_code != simgval.gEVT_JOB_DURATION_CHANGED:
-        print "[Broker__] %s EVT_CODE (%s) Error! => " \
-              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Error - %s'
-                            % (simgval.get_sim_code_str(evt_code), str(q_msg)))
-
+        g_log_handler.error("[Broker__] %s EVT_CODE (%s) Error! => %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
-        return
-
 
     if evt_src != simgval.gBLOCK_SIM_EVENT_HANDLER:
-        print "[Broker__] %s EVT_SRC (%d) ERROR! => " % (str(Global_Curr_Sim_Clock), evt_src), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_SRC (%d) ERROR! => %s' % (evt_src, str(q_msg)))
-
+        g_log_handler.error("[Broker__] %s EVT_SRC (%d) ERROR! => %s" % (str(Global_Curr_Sim_Clock), evt_src, q_msg))
         clib.sim_exit()
-        return
 
     job_id = evt_data[0]
     vm_obj = evt_data[1]
@@ -2606,7 +2211,6 @@ def broker_evt_job_duration_changed (q_msg):
     if is_SD_affected_by_job_duration_change () == True:
         #simobj.set_VM_sd_policy_activated_flag (vm_obj, True)   # added on 10/27/2014 - especially for SL-based Scale Down
         send_sd_tmr_clear_event_to_SEH (vm_obj, True)
-
 
     # send ack
     broker_send_evt_ack (evt_id, evt_code)
@@ -2618,11 +2222,8 @@ def broker_event_processing (q_msg):
     evt_sub_code    = q_msg[5]  # EVT_SUB_CODE
     evt_data        = q_msg[6]  # EVT_DATA
 
-    print "\n\n[Broker__] %s EVT_RECV - EC:%s, ESC:%s, SRC_BLOCK:%s" \
-          % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), simgval.get_sim_code_str(evt_src))
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_RECV - EC:%s, ESC: %s, SRC_BLOCK:%s, data: %s'
-             % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), simgval.get_sim_code_str(evt_src), str(evt_data)))
-
+    g_log_handler.info("\n\n[Broker__] %s EVT_RECV - EC:%s, ESC:%s, SRC_BLOCK:%s" \
+          % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), simgval.get_sim_code_str(evt_src)))
     if evt_code == simgval.gEVT_EXP_TIMER:
 
         # timer expired event
@@ -2665,14 +2266,12 @@ def broker_event_processing (q_msg):
 
     elif evt_code == simgval.gEVT_CONFIRM_SIMENTITY_TERMINATION or evt_code == simgval.gEVT_REJECT_SIMENTITY_TERMINATION:
 
-        print "[Broker__] %s EVT_PROC: EVT_CODE (%s) => Ignore Event," % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + '  broker_event_processing EVT_CODE => Ignore Event, %s' % str(q_msg))
+        g_log_handler.info("[Broker__] %s EVT_PROC: EVT_CODE (%s) => Ignore Event, %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
 
     else:
-        # event code error!
-        print "[Broker__] %s EVT_PROC: EVT_CODE (%s) Error! => " % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  broker_event_processing EVT_CODE ERROR! - %s' % str(q_msg))
 
+        # event code error!
+        g_log_handler.error("[Broker__] %s EVT_PROC: EVT_CODE (%s) Error! => %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
 
 def broker_term_event_processing (q_msg):
@@ -2692,19 +2291,13 @@ def broker_term_event_processing (q_msg):
     if evt_code != simgval.gEVT_CONFIRM_SIMENTITY_TERMINATION and evt_code != simgval.gEVT_REJECT_SIMENTITY_TERMINATION:
         return False
 
-    print "\n\n[Broker__] %s EVT_RECV - EC:%s, ESC:%s, SRC_BLOCK:%s" \
-          % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), simgval.get_sim_code_str(evt_src))
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  Receive Event - EC:%s, ESC: %s, SRC_BLOCK:%s, data: %s'
-             % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), simgval.get_sim_code_str(evt_src), str(evt_data)))
-
-
+    g_log_handler.info("\n\n[Broker__] %s EVT_RECV - EC:%s, ESC:%s, SRC_BLOCK:%s" \
+          % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), simgval.get_sim_code_str(evt_src)))
     ret_val = False
-
     if evt_code == simgval.gEVT_CONFIRM_SIMENTITY_TERMINATION:
-        print "[Broker__] %s Broker Terminated - TERM FLAG:%s, EVT:%s" \
-              % (str(Global_Curr_Sim_Clock), str(g_flag_sim_entity_term), simgval.get_sim_code_str(evt_code))
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + '  Broker Terminated - TERM FLAG:%s, EVT:%s'
-                 % (str(g_flag_sim_entity_term), simgval.get_sim_code_str(evt_code)))
+
+        g_log_handler.info("[Broker__] %s Broker Terminated - TERM FLAG:%s, EVT:%s" \
+              % (str(Global_Curr_Sim_Clock), str(g_flag_sim_entity_term), simgval.get_sim_code_str(evt_code)))
 
         # [a] send ack first
         broker_send_evt_ack (evt_id, evt_sub_code)
@@ -2752,7 +2345,7 @@ def update_curr_sim_clock (clock):
     Global_Curr_Sim_Clock_CV.notify()
     Global_Curr_Sim_Clock_CV.release()
 
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  Update Global_Curr_Sim_Clock: %s' % str(Global_Curr_Sim_Clock))
+    #g_log_handler.info(str(Global_Curr_Sim_Clock) + '  Update Global_Curr_Sim_Clock: %s' % str(Global_Curr_Sim_Clock))
     return
 
 def broker_generate_report ():
@@ -2771,9 +2364,7 @@ def broker_generate_report ():
         diff = job.deadline - total_duration
 
         vm_obj = get_VM_from_Stopped_VM_Instances (job.VM_id)
-
         jcost = round((run_time * vm_obj.unit_price / float (g_sim_conf.billing_unit_clock)), 5)
-
         rep_job_comp_log.info ('%d,%s,%d,%s,%s,%s,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%s' %
                                      (job.id, job.name, job.act_duration_on_VM, job.act_nettime_on_VM[0], job.act_cputime_on_VM, job.act_nettime_on_VM[1], job.deadline, job.VM_id,
                                       job.time_create, job.time_assign, job.time_start, job.time_complete,
@@ -2798,7 +2389,7 @@ def broker_generate_report ():
                                  vm.startup_lag, len(vm.job_history), job_rt, vm_utilization, stlag_rate, idle_rate, vm.last_job_complete_clock, vm.sd_wait_time,
                                  vm.is_vscale_victim, simgval.get_sim_code_str(vm.vscale_case),vm.vscale_victim_id))
 
-    clib.logwrite_vm_obj(g_log_handler, Global_Curr_Sim_Clock, g_Stopped_VM_Instances[0])
+    clib.logwrite_vm_obj(g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), g_Stopped_VM_Instances[0])
 
 def th_sim_entity_cloud_broker(my_block_id, conf_obj, q_in, q_out):
 
@@ -2824,26 +2415,26 @@ def th_sim_entity_cloud_broker(my_block_id, conf_obj, q_in, q_out):
     print "[Broker__] Start Cloud Broker Thread!"
     log = set_log (conf_obj.log_path)
     g_log_handler = log
-    log.info('0' + '  Cloud Broker Log Start...')
-    log.info('0' + '  ======================================================')
-    log.info('0' + '  List of Broker Policies')
-    log.info('0' + '  ------------------------------------------------------')
-    log.info('0' + '  Job Assignment          : %s' % (simgval.get_sim_code_str(conf_obj.job_assign_policy)))
-    log.info('0' + '  VM Scale Down           : %s' % (simgval.get_sim_code_str(conf_obj.vm_scale_down_policy)))
-    log.info('0' + '  VM Scale Down Unit      : %s' % (conf_obj.vm_scale_down_policy_unit))
-    #log.info('0' + '  VM Unit Price           : %s' % (conf_obj.vm_unit_price))
-    log.info('0' + '  VM Billing Time Unit    : %s' % (simgval.get_sim_code_str(conf_obj.billing_time_unit)))
-    log.info('0' + '  VM Billing Time Period  : %s' % (simgval.get_sim_code_str(conf_obj.billing_time_period)))
-    log.info('0' + '  VM Billing Unit Clock   : %s Sim Clocks' % (conf_obj.billing_unit_clock))
-    log.info('0' + '  Enable Vertical Scaling : %s' % (conf_obj.enable_vertical_scaling))
-    log.info('0' + '  VSCALE Operation        : %s' % (simgval.get_sim_code_str(conf_obj.vscale_operation)))
-    log.info('0' + '  ------------------------------------------------------')
-    log.info('0' + '  VM SELECTION METHOD     : %s' % (simgval.get_sim_code_str(conf_obj.vm_selection_method)))
-    log.info('0' + '  NO OF VM TYPES          : %s' % (conf_obj.no_of_vm_types))
-    log.info('0' + '  VM TYPE INFOS           : ')
-    for vm_type in conf_obj.vm_types:
-        log.info('0' + '                         : %s' % (vm_type.get_infos()))
-    log.info('0' + '  ======================================================')
+    #log.info('0' + '  Cloud Broker Log Start...')
+    #log.info('0' + '  ======================================================')
+    #log.info('0' + '  List of Broker Policies')
+    #log.info('0' + '  ------------------------------------------------------')
+    #log.info('0' + '  Job Assignment          : %s' % (simgval.get_sim_code_str(conf_obj.job_assign_policy)))
+    #log.info('0' + '  VM Scale Down           : %s' % (simgval.get_sim_code_str(conf_obj.vm_scale_down_policy)))
+    #log.info('0' + '  VM Scale Down Unit      : %s' % (conf_obj.vm_scale_down_policy_unit))
+    ##log.info('0' + '  VM Unit Price           : %s' % (conf_obj.vm_unit_price))
+    #log.info('0' + '  VM Billing Time Unit    : %s' % (simgval.get_sim_code_str(conf_obj.billing_time_unit)))
+    #log.info('0' + '  VM Billing Time Period  : %s' % (simgval.get_sim_code_str(conf_obj.billing_time_period)))
+    #log.info('0' + '  VM Billing Unit Clock   : %s Sim Clocks' % (conf_obj.billing_unit_clock))
+    #log.info('0' + '  Enable Vertical Scaling : %s' % (conf_obj.enable_vertical_scaling))
+    #log.info('0' + '  VSCALE Operation        : %s' % (simgval.get_sim_code_str(conf_obj.vscale_operation)))
+    #log.info('0' + '  ------------------------------------------------------')
+    #log.info('0' + '  VM SELECTION METHOD     : %s' % (simgval.get_sim_code_str(conf_obj.vm_selection_method)))
+    #log.info('0' + '  NO OF VM TYPES          : %s' % (conf_obj.no_of_vm_types))
+    #log.info('0' + '  VM TYPE INFOS           : ')
+    #for vm_type in conf_obj.vm_types:
+    #    log.info('0' + '                         : %s' % (vm_type.get_infos()))
+    #log.info('0' + '  ======================================================')
 
     job_recv_log = set_job_recv_log (conf_obj.log_path)
     g_job_recv_log_handler = job_recv_log
@@ -2867,16 +2458,13 @@ def th_sim_entity_cloud_broker(my_block_id, conf_obj, q_in, q_out):
         wanna_term = False
 
         time.sleep(0.01)
-        #print "\n[Broker__] Queue Message  :", q_message
-
         evt_clock   = q_message[1]  # EVT_SIMULATION_CLOCK
         evt_src     = q_message[2]  # SRC BLOCK
         evt_dst     = q_message[3]  # DST BLOCK
         evt_code    = q_message[4]  # EVT_CODE
 
         if evt_dst != my_block_id:
-            print "[Broker__] EVT_MSG ERROR! (Wrong EVT_DST) - ", q_message
-            log.error(str(Global_Curr_Sim_Clock) + '  EVT_MSG ERROR! (Wrong EVT_DST) - %s' % str(q_message))
+            log.error ("[Broker__] EVT_MSG ERROR! (Wrong EVT_DST) - %s" % (q_message))
             continue
 
         if evt_src == simgval.gBLOCK_SIM_EVENT_HANDLER:
@@ -2884,10 +2472,7 @@ def th_sim_entity_cloud_broker(my_block_id, conf_obj, q_in, q_out):
             update_curr_sim_clock (evt_clock)
 
         else:
-            print "[Broker__] EVT_MSG ERROR! (Wrong EVT_SRC:%s) - " % (simgval.get_sim_code_str(evt_src)), q_message
-            log.error(str(Global_Curr_Sim_Clock) + '  EVT_MSG ERROR! (Wrong EVT_SRC:%s) - %s' % (simgval.get_sim_code_str(evt_src), str(q_message)))
-
-            clib.sim_exit()
+            log.error("[Broker__] EVT_MSG ERROR! (Wrong EVT_SRC:%s) - %s" % (simgval.get_sim_code_str(evt_src), q_message))
             continue
 
         # Termination Processing
@@ -2916,30 +2501,15 @@ JOB_ASSIGN_CODE_ERROR       = simgval.gJOB_ASSIGN_ERROR
 def assign_job (job_obj):
 
     if g_sim_conf.job_assign_policy == simgval.gPOLICY_JOBASSIGN_EDF:
-
         return EDF_job_assignment (job_obj)
 
     else:
-        
-        print "[Broker__] %s JOB_ASSIGNMENT_POLICY (%s) Error!!!" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_assign_policy))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  JOB_ASSIGNMENT_POLICY (%s) Error!!!' % simgval.get_sim_code_str(g_sim_conf.job_assign_policy))
-
+        g_log_handler.error ("[Broker__] %s JOB_ASSIGNMENT_POLICY (%s) Error!!!" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_assign_policy)))
         clib.sim_exit()
 
     return JOB_ASSIGN_CODE_ERROR, None
 
 def get_data_transfer_infos (info_type, data_usage_type, data_flow_direction):
-
-    # for debug
-    """
-    print "\n=============================================================="
-    print "lib get_data_transfer_rate"
-    print "=============================================================="
-    print "info_type = ", info_type
-    print "data_usage_type =", simgval.get_sim_code_str(data_usage_type)
-    print "data_flow_direction = ", simgval.get_sim_code_str(data_flow_direction)
-    print "==============================================================\n"
-    """
 
     data_transfer_infos = None
     if info_type == "rate":
@@ -2948,10 +2518,8 @@ def get_data_transfer_infos (info_type, data_usage_type, data_flow_direction):
         data_transfer_infos = g_sim_conf.cost_data_transfer
 
     if data_transfer_infos is None:
-        print "[Broker__] %s get_data_transfer_infos: Cannot find proper info list! - info_type (%s), data_usage_type (%s), data_flow_direction (%s)" \
-              % (str(Global_Curr_Sim_Clock), info_type, simgval.get_sim_code_str(data_usage_type), simgval.get_sim_code_str(data_flow_direction))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  get_data_transfer_infos: Cannot find proper info list! - info_type (%s), data_usage_type (%s), data_flow_direction (%s)'
-                            % (info_type, simgval.get_sim_code_str(data_usage_type), simgval.get_sim_code_str(data_flow_direction)))
+        g_log_handler.error("[Broker__] %s get_data_transfer_infos: Cannot find proper info list! - info_type (%s), data_usage_type (%s), data_flow_direction (%s)" \
+              % (str(Global_Curr_Sim_Clock), info_type, simgval.get_sim_code_str(data_usage_type), simgval.get_sim_code_str(data_flow_direction)))
         clib.sim_exit()
 
     if data_usage_type == simgval.gJOBFILE_INPUT:
@@ -2967,10 +2535,7 @@ def get_data_transfer_infos (info_type, data_usage_type, data_flow_direction):
             return data_transfer_infos[1]
 
         else:
-            print "[Broker__] %s get_data_transfer_infos: Input Data Flow Direction Error! - into_type (%s), data_usage_type (%s), data_flow_direction (%s)" \
-                  % (str(Global_Curr_Sim_Clock), info_type, simgval.get_sim_code_str(data_usage_type), simgval.get_sim_code_str(data_flow_direction))
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  get_data_transfer_infos: Input Data Flow Direction Error! - into_type (%s), data_usage_type (%s), data_flow_direction (%s)'
-                                % (info_type, simgval.get_sim_code_str(data_usage_type), simgval.get_sim_code_str(data_flow_direction)))
+            g_log_handler.error("[Broker__] %s get_data_transfer_infos: Input Data Flow Direction Error! - into_type (%s), data_usage_type (%s), data_flow_direction (%s)" % (str(Global_Curr_Sim_Clock), info_type, simgval.get_sim_code_str(data_usage_type), simgval.get_sim_code_str(data_flow_direction)))
             clib.sim_exit()
 
     elif data_usage_type == simgval.gJOBFILE_OUTPUT:
@@ -2985,17 +2550,13 @@ def get_data_transfer_infos (info_type, data_usage_type, data_flow_direction):
             return data_transfer_infos[2]
 
         else:
-            print "[Broker__] %s get_data_transfer_infos: Input Data Flow Direction Error! - into_type (%s), data_usage_type (%s), data_flow_direction (%s)" \
-                  % (str(Global_Curr_Sim_Clock), info_type, simgval.get_sim_code_str(data_usage_type), simgval.get_sim_code_str(data_flow_direction))
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  get_data_transfer_infos: Input Data Flow Direction Error! - into_type (%s), data_usage_type (%s), data_flow_direction (%s)'
-                                % (info_type, simgval.get_sim_code_str(data_usage_type), simgval.get_sim_code_str(data_flow_direction)))
+            g_log_handler.error("[Broker__] %s get_data_transfer_infos: Input Data Flow Direction Error! - into_type (%s), data_usage_type (%s), data_flow_direction (%s)" \
+                  % (str(Global_Curr_Sim_Clock), info_type, simgval.get_sim_code_str(data_usage_type), simgval.get_sim_code_str(data_flow_direction)))
             clib.sim_exit()
 
     else:
-        print "[Broker__] %s get_data_transfer_infos: Data Usage Type Error! - into_type (%s), data_usage_type (%s), data_flow_direction (%s)" \
-              % (str(Global_Curr_Sim_Clock), info_type, simgval.get_sim_code_str(data_usage_type), simgval.get_sim_code_str(data_flow_direction))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  get_data_transfer_infos: Data Usage Type Error! - into_type (%s), data_usage_type (%s), data_flow_direction (%s)'
-                            % (info_type, simgval.get_sim_code_str(data_usage_type), simgval.get_sim_code_str(data_flow_direction)))
+        g_log_handler.error("[Broker__] %s get_data_transfer_infos: Data Usage Type Error! - into_type (%s), data_usage_type (%s), data_flow_direction (%s)" \
+              % (str(Global_Curr_Sim_Clock), info_type, simgval.get_sim_code_str(data_usage_type), simgval.get_sim_code_str(data_flow_direction)))
         clib.sim_exit()
 
 
@@ -3006,16 +2567,7 @@ def cal_actual_network_duration_on_VMs (vm_net_factor, file_usage_type, file_flo
     data_transfer_rate = get_data_transfer_infos ("rate", file_usage_type, file_flow_direction)
     mb_file_size = file_size/1024.0
 
-    """
-    print "mb_file_size           : ", mb_file_size
-    print "data_transfer_rate     : ", data_transfer_rate
-    print "vm_net_factor          : ", vm_net_factor
-    """
-
     data_transfer_time = int(math.ceil((mb_file_size / data_transfer_rate) * vm_net_factor))
-
-    #print "data_transfer_duration : (mb_file_size(%s) / data_transfer_rate(%s)) * vm_net_factor (%s) = " % (mb_file_size, data_transfer_rate, vm_net_factor), data_transfer_time, "sec"
-
     return data_transfer_time
 
 # calculate actual job duration - checked for storage simulation on 10/28/2014
@@ -3052,37 +2604,10 @@ def cal_actual_job_duration_on_VMs (job_obj):
     act_runtime_infos = []
     est_statup_lag = get_average_startup_lagtime()
 
-    #debug_logger = g_sim_conf.g_debug_log
-
     for vm_type in vm_types:
         act_runtime_info = []
         act_runtime_info.append(vm_type)            # [0] - vm_type_obj
-
-        """
-        # old version for calculating job duration
-        job_act_duration = 0
-        job_act_cputime = int(math.ceil(vm_type.vm_type_cpu_factor * job_obj.std_duration))
-
-        job_act_nettime = [0,0]
-        if job_obj.use_input_file == True:
-            job_act_nettime[0] = cal_actual_network_duration_on_VMs (vm_type.vm_type_net_factor, simgval.gJOBFILE_INPUT, job_obj.input_file_flow_direction, job_obj.input_file_size)
-
-        if job_obj.use_output_file == True:
-            job_act_nettime[1] = cal_actual_network_duration_on_VMs (vm_type.vm_type_net_factor, simgval.gJOBFILE_OUTPUT, job_obj.output_file_flow_direction, job_obj.output_file_size)
-
-        print "job_act_cputime :", job_act_cputime
-        print "job_act_nettime :", job_act_nettime
-
-        job_act_duration = job_act_cputime + sum(job_act_nettime)
-        print "job_act_duration:", job_act_duration
-        print ""
-        """
-
         job_duration_infos = cal_job_actual_duration_on_VM (vm_type, job_obj)
-        """
-        debug_logger.info (vm_type.get_infos())
-        debug_logger.info (job_duration_infos)
-        """
 
         # Use Existing VM for Job Execution
         act_runtime_info.append(job_duration_infos[0])      # [1] - actual runtime : cpu duration + network (I/O)
@@ -3114,17 +2639,6 @@ def cal_actual_job_duration_on_VMs (job_obj):
         # VM EVALUATION
         act_runtime_info[5] = do_VM_evaluation(act_runtime_info[1], act_runtime_info[0].vm_type_unit_price)
         act_runtime_info[10] = do_VM_evaluation(act_runtime_info[6], act_runtime_info[0].vm_type_unit_price)
-
-    """
-    debug_logger.info ("")
-    debug_logger.info ("=============================================")
-
-    for i, a in enumerate(act_runtime_infos):
-        debug_logger.info ("[%d] %s\t| %s\t| %s\t| %s\t| %s\t| %s\t| %s\t| %s\t| %s\t| %s\t| %s" % (i, a[0].get_infos(), a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10]))
-
-    debug_logger.info ("=============================================")
-    debug_logger.info ("")
-    """
 
     return act_runtime_infos
 
@@ -3224,8 +2738,7 @@ def EDF_job_assignment (job_obj):
     policy_str = simgval.get_sim_code_str(g_sim_conf.job_assign_policy)
     job_str = simobj.get_job_info_str(job_obj)
 
-    print "[Broker__] %s %s - Recv %s" % (str(Global_Curr_Sim_Clock), policy_str, job_str)
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + '  %s - Recv %s' % (policy_str, job_str))
+    g_log_handler.info("[Broker__] %s %s - Recv %s" % (str(Global_Curr_Sim_Clock), policy_str, job_str))
 
     curr_run_vm_cnt = get_number_Running_VM_Instances()
     max_vm_cap = g_sim_conf.job_assign_max_running_vms
@@ -3275,32 +2788,25 @@ def EDF_job_assignment (job_obj):
     # case 1 - cannot find the selected vm type from current running vms.
     if len (vm_ids) < 1:
 
-        print "[Broker__] %s %s - No Current Running VM (TY:%s, PR:$%s)" \
-              % (str(Global_Curr_Sim_Clock), policy_str, sel_vm_type.vm_type_name, sel_vm_type.vm_type_unit_price)
-        g_log_handler.info (str(Global_Curr_Sim_Clock) + '  %s - No Current Running VM (TY:%s, PR:$%s)', policy_str, sel_vm_type.vm_type_name, sel_vm_type.vm_type_unit_price)
-
+        g_log_handler.info("[Broker__] %s %s - No Current Running VM (TY:%s, PR:$%s)" \
+              % (str(Global_Curr_Sim_Clock), policy_str, sel_vm_type.vm_type_name, sel_vm_type.vm_type_unit_price))
 
         # we have buffer for adding new one.
         # case 1 - [a] -
         if curr_run_vm_cnt < max_vm_cap:
 
             # create new one with a specific vm type
-            print "[Broker__] %s %s - Create new VM for Job %s" % (str(Global_Curr_Sim_Clock), policy_str, job_str)
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + '  %s - NCreate new VM for Job %s)', policy_str, job_str)
-
+            g_log_handler.info("[Broker__] %s %s - Create new VM for Job %s" % (str(Global_Curr_Sim_Clock), policy_str, job_str))
             return assign_job_to_new_VM (job_obj, act_runtime_infos)
 
         # we dont have buffer for adding new one --> we leverage current running pool as much as we can.
         # case 1 - [b]
         elif curr_run_vm_cnt == max_vm_cap:
 
-            print "[Broker__] %s %s - Current # of VM (%d) == MAX VM CAP (%d) - Assign Job (%s) to Existing VM " \
-                  % (str(Global_Curr_Sim_Clock), policy_str, curr_run_vm_cnt, max_vm_cap, job_str)
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + '  %s - Current # of VM (%d) == MAX VM CAP (%d) - Assign Job (%s) to Existing VM'
-                                , policy_str, curr_run_vm_cnt, max_vm_cap, job_str)
+            g_log_handler.info("[Broker__] %s %s - Current # of VM (%d) == MAX VM CAP (%d) - Assign Job (%s) to Existing VM " \
+                  % (str(Global_Curr_Sim_Clock), policy_str, curr_run_vm_cnt, max_vm_cap, job_str))
 
             # assign existing vm, which offers earliest job completion time. (any type)
-
             return assign_job_to_any_type_of_existing_VM (job_obj, act_runtime_infos)
 
         # max cap error
@@ -3313,9 +2819,8 @@ def EDF_job_assignment (job_obj):
     # case 2 - can find the selected vm type from current running vms.
     else:
 
-        print "[Broker__] %s %s - Current %d Running VM (TY:%s, PR:$%s) - VM:%s" \
-              % (str(Global_Curr_Sim_Clock), policy_str, len(vm_ids), sel_vm_type.vm_type_name, sel_vm_type.vm_type_unit_price, vm_ids)
-        g_log_handler.info (str(Global_Curr_Sim_Clock) + '  %s - Current %d Running VM (TY:%s, PR:$%s) - VM:%s', policy_str, len(vm_ids), sel_vm_type.vm_type_name, sel_vm_type.vm_type_unit_price, vm_ids)
+        g_log_handler.info("[Broker__] %s %s - Current %d Running VM (TY:%s, PR:$%s) - VM:%s" \
+              % (str(Global_Curr_Sim_Clock), policy_str, len(vm_ids), sel_vm_type.vm_type_name, sel_vm_type.vm_type_unit_price, vm_ids))
 
         #=======================================================================================+
         # find min job execution time...on VM candidates...
@@ -3327,8 +2832,7 @@ def EDF_job_assignment (job_obj):
             vm_info.append(cal_estimated_job_completion_time(vm_id, actual_job_duration_infos))
             est_job_completion_times.append(vm_info)
 
-        print "[Broker__] %s %s - Estimate JOB Completion Time of VM [ID,CompTime]: %s" % (str(Global_Curr_Sim_Clock), policy_str, str(est_job_completion_times))
-        g_log_handler.info (str(Global_Curr_Sim_Clock) + '  %s - EST JOB Completion Time of VM [ID,CompTime]: %s' % (policy_str, str(est_job_completion_times)))
+        g_log_handler.info("[Broker__] %s %s - Estimate JOB Completion Time of VM [ID,CompTime]: %s" % (str(Global_Curr_Sim_Clock), policy_str, str(est_job_completion_times)))
 
         min_info = min (est_job_completion_times, key=lambda x: x[1])
         min_vm_id = min_info[0]
@@ -3345,31 +2849,23 @@ def EDF_job_assignment (job_obj):
         else:
 
             # current vm cannot meet the deadline.
-            print "[Broker__] %s %s - NO Current Running VM can meet the DEADLINE (Min JCT:%d, DL:%d)" \
-                  % (str(Global_Curr_Sim_Clock), policy_str, min_job_complete_time, job_obj.deadline)
-            g_log_handler.info (str(Global_Curr_Sim_Clock) + '  %s - NO Current Running VM can meet the DEADLINE (Min JCT:%d, DL:%d)'
-                                , policy_str, min_job_complete_time, job_obj.deadline)
+            g_log_handler.info("[Broker__] %s %s - NO Current Running VM can meet the DEADLINE (Min JCT:%d, DL:%d)" \
+                  % (str(Global_Curr_Sim_Clock), policy_str, min_job_complete_time, job_obj.deadline))
 
             # case 2 - [b] - 1 : current vms cannot meet deadline => create new one (less than max cap)
             if curr_run_vm_cnt < max_vm_cap:
 
                 # create new one with a specific vm type
-                print "[Broker__] %s %s - Create new VM for Job %s" % (str(Global_Curr_Sim_Clock), policy_str, job_str)
-                g_log_handler.info (str(Global_Curr_Sim_Clock) + '  %s - NCreate new VM for Job %s)', policy_str, job_str)
-
+                g_log_handler.info("[Broker__] %s %s - Create new VM for Job %s" % (str(Global_Curr_Sim_Clock), policy_str, job_str))
                 return assign_job_to_new_VM (job_obj, act_runtime_infos)
 
             # we dont have buffer for adding new one --> we leverage current running pool as much as we can.
             # case 2 - [b] - 2 : current vms cannot meet deadline => cannot create new one (due to the max cap of vm)
             elif curr_run_vm_cnt == max_vm_cap:
 
-
                 # assign existing vm, which offers earliest job completion time. (any type)
-                print "[Broker__] %s %s - Current # of VM (%d) == MAX VM CAP (%d) - Assign Job (%s) to Existing VM " \
-                      % (str(Global_Curr_Sim_Clock), policy_str, curr_run_vm_cnt, max_vm_cap, job_str)
-                g_log_handler.info (str(Global_Curr_Sim_Clock) + '  %s - Current # of VM (%d) == MAX VM CAP (%d) - Assign Job (%s) to Existing VM'
-                                    , policy_str, curr_run_vm_cnt, max_vm_cap, job_str)
-
+                g_log_handler.info("[Broker__] %s %s - Current # of VM (%d) == MAX VM CAP (%d) - Assign Job (%s) to Existing VM " \
+                      % (str(Global_Curr_Sim_Clock), policy_str, curr_run_vm_cnt, max_vm_cap, job_str))
                 return assign_job_to_any_type_of_existing_VM (job_obj, act_runtime_infos)
 
             # max cap error
@@ -3386,14 +2882,11 @@ def EDF_job_assignment (job_obj):
 def job_assign_maxcap_error():
 
     curr_run_vm_cnt = get_number_Running_VM_Instances()
-
     if curr_run_vm_cnt <= g_sim_conf.job_assign_max_running_vms:
         return
 
-    print "[Broker__] %s %s Max Cap Error! - Current VM Cnt:%d exceeds the Max Cap (%d)" \
-          % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_assign_policy), curr_run_vm_cnt, g_sim_conf.job_assign_max_running_vms)
-    g_log_handler.error (str(Global_Curr_Sim_Clock) + "  %s Max Cap Error! - Current VM Cnt:%d exceeds the Max Cap (%d)"
-                        % (simgval.get_sim_code_str(g_sim_conf.job_assign_policy), curr_run_vm_cnt, g_sim_conf.job_assign_max_running_vms))
+    g_log_handler.error("[Broker__] %s %s Max Cap Error! - Current VM Cnt:%d exceeds the Max Cap (%d)" \
+          % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.job_assign_policy), curr_run_vm_cnt, g_sim_conf.job_assign_max_running_vms))
     clib.sim_exit()
 
 # Storage Simulation Debug Point - done by 10252014
@@ -3402,13 +2895,8 @@ def assign_job_to_new_VM (job_obj, act_runtime_infos):
     policy_str = simgval.get_sim_code_str(g_sim_conf.job_assign_policy)
     job_str = simobj.get_job_info_str(job_obj)
 
-    print "[Broker__] %s %s - Exec assign_job_to_new_VM" \
-          % (str(Global_Curr_Sim_Clock), policy_str)
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + '  %s - Exec assign_job_to_new_VM', policy_str)
-
-    print "[Broker__] %s %s - Reevalute VM type with Startup Lag" \
-          % (str(Global_Curr_Sim_Clock), policy_str)
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + '  %s - Reevaluate VM type with Startup Lag', policy_str)
+    g_log_handler.info("[Broker__] %s %s - Exec assign_job_to_new_VM" % (str(Global_Curr_Sim_Clock), policy_str))
+    g_log_handler.info("[Broker__] %s %s - Reevalute VM type with Startup Lag" % (str(Global_Curr_Sim_Clock), policy_str))
 
     # re-evaluate vm selection with startup lag.
     sel_vm_type, actual_job_duration_infos = VM_type_selection (job_obj, act_runtime_infos, JOB_ASSIGN_TO_NEW_VM)
@@ -3426,11 +2914,10 @@ def assign_job_to_new_VM (job_obj, act_runtime_infos):
     insert_job_into_VM_Job_Queue (new_vm_id, job_obj)
 
     # return: job_assignment_result_code, vm_id
-    print "[Broker__] %s %s - %s Assigned to New VM (ID:%d, TY:%s, PR:$%s)" \
-          % (str(Global_Curr_Sim_Clock), policy_str, job_str, new_vm_id, sel_vm_type.vm_type_name, sel_vm_type.vm_type_unit_price)
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + '  %s - %s Assigned to New VM (ID:%d, TY:%s, PR:$%s)'
-                        % (policy_str, job_str, new_vm_id, sel_vm_type.vm_type_name, sel_vm_type.vm_type_unit_price))
-    # ========================================================================
+
+    g_log_handler.info("[Broker__] %s %s - %s Assigned to New VM (ID:%d, TY:%s, PR:$%s)" \
+          % (str(Global_Curr_Sim_Clock), policy_str, job_str, new_vm_id, sel_vm_type.vm_type_name, sel_vm_type.vm_type_unit_price))
+    # ======================================================================
 
     return JOB_ASSIGN_TO_NEW_VM, new_vm_id
 
@@ -3440,14 +2927,10 @@ def assign_job_to_any_type_of_existing_VM (job_obj, act_runtime_infos):
     policy_str = simgval.get_sim_code_str(g_sim_conf.job_assign_policy)
     job_str = simobj.get_job_info_str(job_obj)
 
-    print "[Broker__] %s %s - Exec assign_job_to_any_type_of_existing_VM" \
-          % (str(Global_Curr_Sim_Clock), policy_str)
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + '  %s - Exec assign_job_to_any_type_of_existing_VM', policy_str)
+    g_log_handler.info("[Broker__] %s %s - Exec assign_job_to_any_type_of_existing_VM" % (str(Global_Curr_Sim_Clock), policy_str))
 
     # get all current running vm ids.
     curr_vm_ids = get_running_VM_IDs ()
-
-    #display_actual_runtime_infos_on_VM (act_runtime_infos)
 
     est_job_completion_times = []
     for curr_vm_id in curr_vm_ids:
@@ -3465,10 +2948,8 @@ def assign_job_to_any_type_of_existing_VM (job_obj, act_runtime_infos):
         est_job_completion_times.append(curr_vm_info)
 
     if len (est_job_completion_times) < 1:
-        print "[Broker__] %s %s - Est Job Completion Time Calculation Error!" % (str(Global_Curr_Sim_Clock), policy_str)
-        g_log_handler.info (str(Global_Curr_Sim_Clock) + '  %s - Est Job Completion Time Calculation Error!', policy_str)
+        g_log_handler.info("[Broker__] %s %s - Est Job Completion Time Calculation Error!" % (str(Global_Curr_Sim_Clock), policy_str))
         clib.sim_exit()
-
 
     min_info = min (est_job_completion_times, key=lambda x: x[1])
     min_vm_id = min_info[0]
@@ -3482,11 +2963,8 @@ def assign_job_to_any_type_of_existing_VM (job_obj, act_runtime_infos):
 
     # insert input job to the existing VM
     insert_job_into_VM_Job_Queue (min_vm_id, job_obj)
-
-    print "[Broker__] %s %s - %s Assigned to Existing VM (ID:%d, TY:%s, PR:$%s, EJCT:%d)" \
-            % (str(Global_Curr_Sim_Clock), policy_str, job_str, min_vm_id, min_info[-1].type_name, min_info[-1].unit_price, min_job_complete_time)
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "  %s - %s Assigned to Existing VM (ID:%d, TY:%s, PR:$%s, EJCT:%d)"
-            % (policy_str, job_str, min_vm_id, min_info[-1].type_name, min_info[-1].unit_price, min_job_complete_time))
+    g_log_handler.info("[Broker__] %s %s - %s Assigned to Existing VM (ID:%d, TY:%s, PR:$%s, EJCT:%d)" \
+            % (str(Global_Curr_Sim_Clock), policy_str, job_str, min_vm_id, min_info[-1].type_name, min_info[-1].unit_price, min_job_complete_time))
     # ========================================================================
 
     return JOB_ASSIGN_TO_EXISTING_VM, min_vm_id
@@ -3495,15 +2973,12 @@ def assign_job_to_any_type_of_existing_VM (job_obj, act_runtime_infos):
 def assign_job_to_specific_existing_VM (job_obj, actual_job_duration_infos, min_vm_id, min_job_complete_time):
 
     policy_str = simgval.get_sim_code_str(g_sim_conf.job_assign_policy)
-    print "[Broker__] %s %s - Exec assign_job_to_specific_existing_VM" \
-          % (str(Global_Curr_Sim_Clock), policy_str)
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + '  %s - Exec assign_job_to_specific_existing_VM', policy_str)
+    g_log_handler.info("[Broker__] %s %s - Exec assign_job_to_specific_existing_VM" \
+          % (str(Global_Curr_Sim_Clock), policy_str))
 
     target_vm = get_VM_from_Running_VM_Instances(min_vm_id)
     if target_vm is None:
-        print "[Broker__] %s %s - Cannot find a proper VM (ID:%d)" \
-              % (str(Global_Curr_Sim_Clock), policy_str, min_vm_id)
-        g_log_handler.error (str(Global_Curr_Sim_Clock) + '  %s - Cannot find a proper VM (ID:%d)', policy_str, min_vm_id)
+        g_log_handler.error("[Broker__] %s %s - Cannot find a proper VM (ID:%d)" % (str(Global_Curr_Sim_Clock), policy_str, min_vm_id))
         clib.sim_exit()
 
     target_vm_type_obj = iaas.get_VM_type_obj_by_type_name(target_vm.type_name)
@@ -3518,10 +2993,8 @@ def assign_job_to_specific_existing_VM (job_obj, actual_job_duration_infos, min_
     insert_job_into_VM_Job_Queue (min_vm_id, job_obj)
 
     job_str = simobj.get_job_info_str(job_obj)
-    print "[Broker__] %s %s - %s Assigned to Existing VM (ID:%d, TY:%s, PR:$%s, EJCT:%d)" \
-            % (str(Global_Curr_Sim_Clock), policy_str, job_str, min_vm_id, target_vm.type_name, target_vm.unit_price, min_job_complete_time)
-    g_log_handler.info (str(Global_Curr_Sim_Clock) + "  %s - %s Assigned to Existing VM (ID:%d, TY:%s, PR:$%s, EJCT:%d)"
-            % (policy_str, job_str, min_vm_id, target_vm.type_name, target_vm.unit_price, min_job_complete_time))
+    g_log_handler.info("[Broker__] %s %s - %s Assigned to Existing VM (ID:%d, TY:%s, PR:$%s, EJCT:%d)" \
+            % (str(Global_Curr_Sim_Clock), policy_str, job_str, min_vm_id, target_vm.type_name, target_vm.unit_price, min_job_complete_time))
     # ========================================================================
 
     return JOB_ASSIGN_TO_EXISTING_VM, min_vm_id
@@ -3546,18 +3019,14 @@ def trigger_vm_scale_down (vm_id):
 
     # [a] - 1 : Parameter Error Check #1
     if vm_id < 1:
-        print "[Broker__] %s VM SCALE DOWN ERROR! - Invalid VM ID(%d)" \
-              % (str(Global_Curr_Sim_Clock), vm_id)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  VM SCALE DOWN ERROR! - Invalid VM ID(%d)' % (vm_id))
+        g_log_handler.error("[Broker__] %s VM SCALE DOWN ERROR! - Invalid VM ID(%d)" % (str(Global_Curr_Sim_Clock), vm_id))
         clib.sim_exit()
 
     # [a] - 2 : Parameter Error Check #2
     find_result, find_index = find_VM_from_Running_VM_Instances (vm_id)
     if find_result == False:
-        print "[Broker__] %s VM SCALE DOWN ERROR! - Cannot Find VM(ID:%d) from g_Running_VM_Instances List" \
-              % (str(Global_Curr_Sim_Clock), vm_id)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  VM SCALE DOWN ERROR! - Cannot Find VM(ID:%d) from g_Running_VM_Instances List' % (vm_id))
-        clib.logwrite_VM_Instance_Lists (g_log_handler, Global_Curr_Sim_Clock, "Current g_Running_VM_Instances", g_Running_VM_Instances)
+        g_log_handler.error("[Broker__] %s VM SCALE DOWN ERROR! - Cannot Find VM(ID:%d) from g_Running_VM_Instances List" % (str(Global_Curr_Sim_Clock), vm_id))
+        clib.logwrite_VM_Instance_Lists (g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "Current g_Running_VM_Instances", g_Running_VM_Instances)
         clib.sim_exit()
 
     if g_sim_conf.vm_scale_down_policy == simgval.gPOLICY_VM_SCALEDOWN_IMMEDIATE:
@@ -3655,9 +3124,8 @@ def trigger_vm_scale_down (vm_id):
         run_SD_JAT_ARIMA_policy (vm_id)
 
     else:
-        print "[Broker__] %s VM SCALE DOWN ERROR! - Invalid Policy(%s,%s)" \
-              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.vm_scale_down_policy), str(g_sim_conf.vm_scale_down_policy_timer_unit))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  VM SCALE DOWN ERROR! - Invalid Policy(%s,%s)' % (simgval.get_sim_code_str(g_sim_conf.vm_scale_down_policy), str(g_sim_conf.vm_scale_down_policy_timer_unit)))
+        g_log_handler.error("[Broker__] %s VM SCALE DOWN ERROR! - Invalid Policy(%s,%s)" \
+              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(g_sim_conf.vm_scale_down_policy), str(g_sim_conf.vm_scale_down_policy_timer_unit)))
         clib.sim_exit()
 
 # Scale Down Policy #1 --> SD-IM : Immediate Scaling Down
@@ -4173,9 +3641,7 @@ def run_SD_JAT_AR_policy (vm_id):
             else:
                 p -= 1
                 if p < 1:
-                    print "[Broker__] %s VM (ID:%d) AR(%d) Error!, Samples =>" % (str(Global_Curr_Sim_Clock), vm_id, p), y
-                    g_log_handler.error(str(Global_Curr_Sim_Clock) + '   VM (ID:%d) AR(%d) Error!, Samples => %s' % (vm_id, p, str(y)))
-                    clib.sim_long_sleep()
+                    g_log_handler.error("[Broker__] %s VM (ID:%d) AR(%d) Error!, Samples => %s" % (str(Global_Curr_Sim_Clock), vm_id, p, y))
                     ar_result = 1
 
         bounds = get_vm_wait_time_bounds()
@@ -4225,9 +3691,8 @@ def run_SD_JAT_ARMA_policy (vm_id):
                     q -=1
 
                 if p < 1 and q < 1:
-                    print "[Broker__] %s VM (ID:%d) ARMA(%d, %d) Error!, Samples =>" % (str(Global_Curr_Sim_Clock), vm_id, p, q), y
-                    g_log_handler.error(str(Global_Curr_Sim_Clock) + '   VM (ID:%d) ARMA(%d, %d) Error!, Samples => %s' % (vm_id, p, q, str(y)))
-                    clib.sim_long_sleep ()
+                    
+                    g_log_handler.error("[Broker__] %s VM (ID:%d) ARMA(%d, %d) Error!, Samples => %s" % (str(Global_Curr_Sim_Clock), vm_id, p, q, y))
                     arma_result = 1
 
         bounds = get_vm_wait_time_bounds()
@@ -4281,9 +3746,8 @@ def run_SD_JAT_ARIMA_policy (vm_id):
                 else:
                     p -= 1 
                 if p < 1 and d < 1 and q < 1:
-                    print "[Broker__] %s VM (ID:%d) ARIMA(%d, %d, %d) Error!, Samples =>" % (str(Global_Curr_Sim_Clock), vm_id, p, d, q), y
-                    g_log_handler.error(str(Global_Curr_Sim_Clock) + '   VM (ID:%d) ARIMA(%d, %d, %d) Error!, Samples => %s' % (vm_id, p, d, q, str(y)))
-                    clib.sim_long_sleep ()
+
+                    g_log_handler.error("[Broker__] %s VM (ID:%d) ARIMA(%d, %d, %d) Error!, Samples => %s" % (str(Global_Curr_Sim_Clock), vm_id, p, d, q, y))
                     arima_result = 1
 
         bounds = get_vm_wait_time_bounds()
@@ -4312,23 +3776,22 @@ def estimate_next_idle_clock (vm_id):
 
     vm = get_VM_from_Running_VM_Instances(vm_id)
     if vm is None:
-        print "[Broker__] %s VM (ID:%d) not found in g_Running_VM_Instances" % (str(Global_Curr_Sim_Clock), vm_id)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '   VM (ID:%d) not found in g_Running_VM_Instances' % (vm_id))
-        clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "g_Running_VM_Instances", g_Running_VM_Instances)
-        clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "g_Stopped_VM_Instances", g_Stopped_VM_Instances)
+        g_log_handler.error("[Broker__] %s VM (ID:%d) not found in g_Running_VM_Instances" % (str(Global_Curr_Sim_Clock), vm_id))
+        clib.logwrite_VM_Instance_Lists(g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "g_Running_VM_Instances", g_Running_VM_Instances)
+        clib.logwrite_VM_Instance_Lists(g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "g_Stopped_VM_Instances", g_Stopped_VM_Instances)
         clib.sim_exit()
 
     est_idle_time = clib.get_sum_job_actual_duration(vm.job_queue) + 1
 
     if vm.current_job is None:
         if est_idle_time < 1:
-            print "[Broker__] %s VM (ID:%d) has no jobs to process - to debug!!!" % (str(Global_Curr_Sim_Clock), vm_id)
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '   VM (ID:%d) has no jobs to process - to debug!!!' % (vm_id))
-            clib.logwrite_vm_obj(Global_Curr_Sim_Clock, g_Completed_Jobs, vm)
-            clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "g_Running_VM_Instances", g_Running_VM_Instances)
-            clib.logwrite_VM_Instance_Lists(g_log_handler, Global_Curr_Sim_Clock, "g_Stopped_VM_Instances", g_Stopped_VM_Instances)
-            clib.logwrite_JobList(g_log_handler, Global_Curr_Sim_Clock, "g_Received_Jobs", g_Received_Jobs)
-            clib.logwrite_JobList(g_log_handler, Global_Curr_Sim_Clock, "g_Completed_Jobs", g_Completed_Jobs)
+
+            g_log_handler.error("[Broker__] %s VM (ID:%d) has no jobs to process - to debug!!!" % (str(Global_Curr_Sim_Clock), vm_id))
+            clib.logwrite_vm_obj(g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), vm)
+            clib.logwrite_VM_Instance_Lists(g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "g_Running_VM_Instances", g_Running_VM_Instances)
+            clib.logwrite_VM_Instance_Lists(g_log_handler, "[Broker__] " + str(Global_Curr_Sim_Clock), "g_Stopped_VM_Instances", g_Stopped_VM_Instances)
+            clib.logwrite_JobList(g_log_handler, "[Broer__] " + str(Global_Curr_Sim_Clock), "g_Received_Jobs", g_Received_Jobs)
+            clib.logwrite_JobList(g_log_handler, "[Broer__] " + str(Global_Curr_Sim_Clock), "g_Completed_Jobs", g_Completed_Jobs)
             clib.sim_exit()
     else:
 
@@ -4377,25 +3840,25 @@ def send_scale_down_timer_event (vm_id, sd_tmr_evt):
     if use_sd_policy_activated_flag() == True and get_VM_sd_policy_activated(vm_id) == True:
         wait_time = sd_tmr_evt[1]
 
-        curframe = inspect.currentframe()
-        calframe = inspect.getouterframes(curframe, 2)
-        g_log_handler.info (str(Global_Curr_Sim_Clock) + "  %s" % (str(g_Job_Arrival_Rate)))
-        g_log_handler.info (str(Global_Curr_Sim_Clock) + "  =========================================================")
-        g_log_handler.info (str(Global_Curr_Sim_Clock) + "  Lib      : send_scale_down_timer_event")
-        g_log_handler.info (str(Global_Curr_Sim_Clock) + "  Param    : vm_id: %d, sd_tmr_evt: %s" % (vm_id, str(sd_tmr_evt)))
-        g_log_handler.info (str(Global_Curr_Sim_Clock) + "  Wait_Time: %d" % (wait_time))
-        g_log_handler.info (str(Global_Curr_Sim_Clock) + "  Caller   : %s, %s:%d" % (calframe[1][3], calframe[1][1], calframe[1][2]))
-        g_log_handler.info (str(Global_Curr_Sim_Clock) + "  =========================================================")
+        #curframe = inspect.currentframe()
+        #calframe = inspect.getouterframes(curframe, 2)
+        #g_log_handler.info (str(Global_Curr_Sim_Clock) + "  %s" % (str(g_Job_Arrival_Rate)))
+        #g_log_handler.info (str(Global_Curr_Sim_Clock) + "  =========================================================")
+        #g_log_handler.info (str(Global_Curr_Sim_Clock) + "  Lib      : send_scale_down_timer_event")
+        #g_log_handler.info (str(Global_Curr_Sim_Clock) + "  Param    : vm_id: %d, sd_tmr_evt: %s" % (vm_id, str(sd_tmr_evt)))
+        #g_log_handler.info (str(Global_Curr_Sim_Clock) + "  Wait_Time: %d" % (wait_time))
+        #g_log_handler.info (str(Global_Curr_Sim_Clock) + "  Caller   : %s, %s:%d" % (calframe[1][3], calframe[1][1], calframe[1][2]))
+        #g_log_handler.info (str(Global_Curr_Sim_Clock) + "  =========================================================")
 
         update_VM_sd_wait_time (vm_id, wait_time)
 
     # send timer event to event handler
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_SEND - EC:%s, ESC:%s, DST:%s, DATA: %s, EVT_MSG: %s'
-             % (simgval.get_sim_code_str(sd_tmr_evt[4]), simgval.get_sim_code_str(sd_tmr_evt[5]),
-                simgval.get_sim_code_str(sd_tmr_evt[3]), str(sd_tmr_evt[6]), str(sd_tmr_evt)))
+    #g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_SEND - EC:%s, ESC:%s, DST:%s, DATA: %s, EVT_MSG: %s'
+    #         % (simgval.get_sim_code_str(sd_tmr_evt[4]), simgval.get_sim_code_str(sd_tmr_evt[5]),
+    #            simgval.get_sim_code_str(sd_tmr_evt[3]), str(sd_tmr_evt[6]), str(sd_tmr_evt)))
 
-    g_log_handler.info(sd_tmr_evt)
-    g_log_handler.info(sd_tmr_evt[1])
+    #g_log_handler.info(sd_tmr_evt)
+    #g_log_handler.info(sd_tmr_evt[1])
     gQ_OUT.put (sd_tmr_evt)
 
 def write_debug_log_for_regression_method (vm_id, timer, coefs, x, y, v):

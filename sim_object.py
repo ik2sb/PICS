@@ -694,19 +694,6 @@ def set_VM_sd_policy_activated_flag (vm, val):
     g_VM_Obj_CV.notify()
     g_VM_Obj_CV.release()
 
-    print ""
-    print ""
-    print "vm (ID:%d) sd_policy updated to %s" % (vm.id, vm.sd_policy_activated)
-    print ""
-
-    """
-    curframe = inspect.currentframe()
-    calframe = inspect.getouterframes(curframe, 2)
-
-    print ("\tCaller   : %s, %s:%d\n\n" % (calframe[1][3], calframe[1][1], calframe[1][2]))
-    """
-
-
 def set_VM_sd_wait_time (vm, val):
 
     if val < 0:

@@ -1,3 +1,4 @@
+import sys
 import time
 import os
 import logging
@@ -34,11 +35,19 @@ gQ_IAAS     = None
 def set_log (path):
     logger = logging.getLogger('sim_event_processing')
     log_file = path + '/[' + str(g_my_block_id) + ']-sim_event_processing.log'
+
+    # for file log...
     hdlr = logging.FileHandler(log_file)
-    #hdlr = logging.FileHandler(path + '/sim_event_processing.log')
     formatter = logging.Formatter('%(message)s')
     hdlr.setFormatter(formatter)
     logger.addHandler(hdlr)
+
+    # for stdout...
+    ch = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter('%(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
     logger.setLevel(logging.INFO)
     return logger
 
@@ -84,12 +93,9 @@ def set_sim_entity_running_state (block_id, state):
         print "[SimEvent] %s Set Sim Entity Running State:" % (str(Global_Curr_Sim_Clock))
         print "[SimEvent] %s %s state is changed to %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(block_id), str(g_Sim_Entity_Running_States[block_id]))
 
-
     else:
-        print "[SimEvent] %s Set Sim Entity Running State Error! => Both Values are the same (OLD:%s, NEW:%s)!" \
-              % (str(Global_Curr_Sim_Clock), g_Sim_Entity_Running_States[block_id], state)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  Set Sim Entity Running State Error! => Both Values are the same (OLD:%s, NEW:%s)!'
-                            % (g_Sim_Entity_Running_States[block_id], state))
+        g_log_handler.error("[SimEvent] %s Set Sim Entity Running State Error! => Both Values are the same (OLD:%s, NEW:%s)!" \
+              % (str(Global_Curr_Sim_Clock), g_Sim_Entity_Running_States[block_id], state))
         clib.sim_exit()
 
 def get_sim_entity_ids_by_running_state (state):
@@ -169,23 +175,6 @@ def display_Timer_Events_List ():
 
     print "[SimEvent] %s ================================================================" % (str(Global_Curr_Sim_Clock))
 
-def logwrite_Timer_Events_List (log_handler, title):
-
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + "  %s " % title)
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + "  ================================================================")
-
-    for seq, te in enumerate (Timer_Events):
-
-        tmr     = te[0]
-        s_blk   = simgval.get_sim_code_str(te[1][0])
-        s_ec    = simgval.get_sim_code_str(te[1][1])
-        s_ed    = str(te[1][2])
-
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + "  [%d] Tmr: %d, BLK: %s, EC: %s, ED: %s"
-                            % (seq, tmr, s_blk, s_ec, s_ed))
-
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + "  ================================================================")
-
 def insert_Timer_Events(evt):
     global Timer_Events
     global Timer_Events_CV
@@ -251,8 +240,7 @@ def remove_Timer_Event_by_Index (index):
 
     except:
 
-        print "[SimEvent] %s remove_Timer_Event_by_Index Error!" % (str(Global_Curr_Sim_Clock))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  remove_Timer_Event_by_Index Error!')
+        g_log_handler.error("[SimEvent] %s remove_Timer_Event_by_Index Error!" % (Global_Curr_Sim_Clock))
         clib.sim_exit()
 
 def get_index_Timer_Event_by_Infos (block_code, evt_code, evt_data1):
@@ -371,11 +359,9 @@ def send_EVT_to_Block (evt_code, dst_block_id, evt):
 
     # for debug
     else:
-        print "[SimEvent] %s send_EVT_to_Block Error! - Invalid EVT_CODE (%s) => " \
-              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), evt
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  send_EVT_to_Block Error! - Invalid EVT_CODE (%s) => %s'
-                       % (simgval.get_sim_code_str(evt_code), str(evt)))
 
+        g_log_handler.error("[SimEvent] %s send_EVT_to_Block Error! - Invalid EVT_CODE (%s) => %s" \
+              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), evt))
         clib.sim_exit()
 
     # Insert Evt ID into Sentout Timer Event if both ret_val (q_put ok) and flag_insert are True
@@ -393,12 +379,9 @@ def SEH_evt_set_clock_processing (q_msg):
     return_vals = [False, None]
 
     if evt_code != simgval.gEVT_SET_CLOCK:
-        print "[SimEvent] %s SEH_evt_set_clock_processing EVT_CODE (%s) Error! => " \
-              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  SEH_evt_set_clock_processing EVT_CODE ERROR! - %s' % str(q_msg))
-
+        g_log_handler.error("[SimEvent] %s SEH_evt_set_clock_processing EVT_CODE (%s) Error! => %s" \
+              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
-        return return_vals
 
     #print "EVT CODE:%s EVT_DATA:%d" % (evt_code, evt_data)
     if Global_Curr_Sim_Clock == evt_clock:
@@ -409,8 +392,6 @@ def SEH_evt_set_clock_processing (q_msg):
 
     if Global_Curr_Sim_Clock > 0:
         ticks = evt_sub_code
-
-        g_log_handler.info (ticks)
         update_Timer_Events (-ticks)
 
     evt_indice = get_indice_timeout_Timer_Events()
@@ -428,9 +409,7 @@ def SEH_evt_set_clock_processing (q_msg):
                 so_evt_data = so_evt[1]
 
                 if so_evt_timeout > 0:
-                    print "[SimEvent] %s Timer is Malfunctioning!!! - timeout:%d" % (str(Global_Curr_Sim_Clock), so_evt_timeout)
-                    g_log_handler.error(str(Global_Curr_Sim_Clock) + '  Timer is Malfunctioning!!! - timeout:%d'
-                                  % so_evt_timeout)
+                    g_log_handler.error("[SimEvent] %s Timer is Malfunctioning!!! - timeout:%d" % (str(Global_Curr_Sim_Clock), so_evt_timeout))
                     clib.sim_exit()
                 else:
                     #[DEST_BLOCK, EVT_CODE, EVT_DATA[]]
@@ -444,10 +423,8 @@ def SEH_evt_set_clock_processing (q_msg):
                         # q_evt_id = q_evt_so[0]
                         # insert_Sentout_Timer_Event_IDs (q_evt_id) --> merged with send_EVT_to_Block 08072014
                     else:
-                        print "[SimEvent] %s Timer Event Send Out Error!!! - Invalid Dest Block %s" \
-                              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(so_evt_data[0]))
-                        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  Timer Event Send Out Error!!! - Invalid Dest Block - %s'
-                                  % simgval.get_sim_code_str(so_evt_data[0]))
+                        g_log_handler.error("[SimEvent] %s Timer Event Send Out Error!!! - Invalid Dest Block %s" \
+                              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(so_evt_data[0])))
                         clib.sim_exit()
 
             else:
@@ -472,15 +449,9 @@ def SEH_evt_set_timer_processing (q_msg):
 
     evt_code  = q_msg[4]  # EVT_CODE
     if evt_code != simgval.gEVT_SET_TIMER:
-        print "[SimEvent] %s SEH_evt_set_timer_processing EVT_CODE (%s) Error! => " \
-              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  SEH_evt_set_timer_processing EVT_CODE ERROR! - %s'
-                            % str(q_msg))
-
+        g_log_handler.error("[SimEvent] %s SEH_evt_set_timer_processing EVT_CODE (%s) Error! => %s" \
+              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
-
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Processing! - %s'
-                            % (simgval.get_sim_code_str(evt_code), str(q_msg)))
 
     evt_clock       = q_msg[1]  # EVT_CLOCK
     evt_src         = q_msg[2]  # EVT_SRC
@@ -500,20 +471,10 @@ def SEH_evt_set_timer_processing (q_msg):
     timer_evt_obj.append(evt_data)
 
     timer_evt.append(timer_evt_obj)
-
-    if evt_sub_code == simgval.gEVT_SUB_VM_SCALE_DOWN:
-        logwrite_Timer_Events_List (g_log_handler, "BEFORE " + simgval.get_sim_code_str(evt_code) + " RECV FOR VM-" + str(evt_data[0]) + ", SET CLOCK:" + str(evt_data[1]) + ", TIMER:" + str(evt_clock))
-
     insert_Timer_Events(timer_evt)
 
-    if evt_sub_code == simgval.gEVT_SUB_VM_SCALE_DOWN:
-        logwrite_Timer_Events_List (g_log_handler, "AFTER " + simgval.get_sim_code_str(evt_code) + " RECV FOR VM-" + str(evt_data[0]) + ", SET CLOCK:" + str(evt_data[1]) + ", TIMER:" + str(evt_clock))
-
-    print "[SimEvent] %s RECV   EVT_SET_TIMER => %s" % (str(Global_Curr_Sim_Clock), str(q_msg))
-    print "[SimEvent] %s INSERT Timer Event   => %s" % (str(Global_Curr_Sim_Clock), str(Timer_Events))
-
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  RECV   EVT_SET_TIMER => %s' % str(q_msg))
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  INSERT Timer Event   => %s' % str(Timer_Events))
+    g_log_handler.info("[SimEvent] %s RECV   EVT_SET_TIMER => %s" % (str(Global_Curr_Sim_Clock), str(q_msg)))
+    g_log_handler.info("[SimEvent] %s INSERT Timer Event   => %s" % (str(Global_Curr_Sim_Clock), str(Timer_Events)))
 
 def SEH_evt_ack_processing (q_msg):
 
@@ -522,11 +483,8 @@ def SEH_evt_ack_processing (q_msg):
     return_vals  = [False, None]
 
     if evt_code != simgval.gEVT_ACK:
-        print "[SimEvent] %s SEH_evt_ack_processing EVT_CODE (%s) Error! => " % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  SEH_evt_ack_processing EVT_CODE ERROR! - %s' % str(q_msg))
-
+        g_log_handler.error("[SimEvent] %s SEH_evt_ack_processing EVT_CODE (%s) Error! => %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
-        return return_vals
 
     print "[SimEvent] %s RECV EVT_ACK => %s" % (str(Global_Curr_Sim_Clock), str(q_msg))
     print "[SimEvent] %s IN  Sentout_Timer_Event_IDs => %s" % (str(Global_Curr_Sim_Clock), str(Sentout_Timer_Event_IDs))
@@ -563,11 +521,8 @@ def SEH_evt_bypass_processing (q_msg):
     evt_data        = q_msg[6]  # EVT_DATA
 
     if evt_code != simgval.gEVT_BYPASS:
-        print "[SimEvent] %s SEH_evt_bypass_processing EVT_CODE (%s) Error! => " % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  SEH_evt_bypass_processing EVT_CODE ERROR! - %s' % str(q_msg))
+        g_log_handler.error("[SimEvent] %s SEH_evt_bypass_processing EVT_CODE (%s) Error! => %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
-    else:
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Processing - %s' % (simgval.get_sim_code_str(evt_code), str(q_msg)))
 
     print "[SimEvent] %s IN  Sentout_Timer_Event_IDs=>" % str(Global_Curr_Sim_Clock), Sentout_Timer_Event_IDs
 
@@ -579,13 +534,8 @@ def SEH_evt_bypass_processing (q_msg):
     q_evt_so = clib.make_queue_event (Global_Curr_Sim_Clock, g_my_block_id, so_evt_dst_block, so_evt_code, so_evt_sub_code, so_evt_data)
     r = send_EVT_to_Block (evt_code, so_evt_dst_block, q_evt_so)
     if r is False:
-        print "[SimEvent] %s EVT_BYPASS DST BLOCK (%s) ERROR!!!" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(so_evt_dst_block))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_BYPASS DST BLOCK (%s) ERROR!!!' % (simgval.get_sim_code_str(so_evt_dst_block)))
+        g_log_handler.error("[SimEvent] %s EVT_BYPASS DST BLOCK (%s) ERROR!!!" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(so_evt_dst_block)))
         clib.sim_exit()
-        return
-
-    #q_evt_id = q_evt_so[0]
-    #insert_Sentout_Timer_Event_IDs (q_evt_id) ==> Merged With send_EVT_to_Block 08072014
 
     print "[SimEvent] %s 1 BYPASS_EVT:%s sent out" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(so_evt_code))
     print "[SimEvent] %s Out Sentout_Timer_Event_IDs=>" % str(Global_Curr_Sim_Clock), Sentout_Timer_Event_IDs
@@ -596,19 +546,15 @@ def SEH_evt_noti_simentity_terminated (q_msg):
     evt_code        = q_msg[4]  # EVT_CODE
 
     if evt_code != simgval.gEVT_NOTI_SIMENTIY_TERMINATED:
-        print "[SimEvent] %s EVT_CODE (%s) Error! => " % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) ERROR! - %s' % (simgval.get_sim_code_str(evt_code), str(q_msg)))
+        g_log_handler.error("[SimEvent] %s EVT_CODE (%s) Error! => %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
 
     remaining_events_exist = find_Timer_Event_by_block (evt_src)
     if remaining_events_exist is True:
-        print "[SimEvent] %s EVT_CODE (%s) Processing Error! => Timer Events for %s Exist!" \
-              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_src))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Processing ERROR! - Timer Events for %s Exist!'
-                            % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_src)))
+        g_log_handler.error("[SimEvent] %s EVT_CODE (%s) Processing Error! => Timer Events for %s Exist!" \
+              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_src)))
         clib.sim_exit()
 
-    #print g_Sim_Entity_Running_States[simgval.gBLOCK_SIM_ENTITY_START+1:]
     set_sim_entity_running_state (evt_src, False)
     print "[SimEvent] %s EVT_CODE (%s) Processing => %s" \
           % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), str(g_Sim_Entity_Running_States[simgval.gBLOCK_SIM_ENTITY_START+1:]))
@@ -636,15 +582,12 @@ def SEH_evt_ask_simentity_termination (q_msg):
     baseline_block_id = simgval.gBLOCK_WORKLOAD_GEN
 
     if evt_code != simgval.gEVT_ASK_SIMENTITY_TERMINATION:
-        print "[SimEvent] %s EVT_CODE (%s) Error! => " % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) ERROR! - %s' % (simgval.get_sim_code_str(evt_code), str(q_msg)))
+        g_log_handler.error("[SimEvent] %s EVT_CODE (%s) Error! => %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
 
     if evt_src == baseline_block_id:
-        print "[SimEvent] %s EVT_CODE (%s) Error! - Invalid SRC Block (%s) =>" \
-                 % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_src)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Error! - Invalid SRC Block (%s) => %s'
-                            % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_src), str(q_msg)))
+        g_log_handler.error("[SimEvent] %s EVT_CODE (%s) Error! - Invalid SRC Block (%s) => %s" \
+                 % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_src), q_msg))
         clib.sim_exit()
 
     print "[SimEvent] %s IN  Sentout_Timer_Event_IDs => %s" % (str(Global_Curr_Sim_Clock), str(Sentout_Timer_Event_IDs))
@@ -654,11 +597,8 @@ def SEH_evt_ask_simentity_termination (q_msg):
     if g_Sim_Entity_Running_States[baseline_block_id] is True:
 
         # cannot be terminated
-
-        print "[SimEvent] %s EVT_CODE (%s) Processing - %s CANNOT be terminated! - %s [%s] is running!" \
-                 % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_src), simgval.get_sim_code_str(baseline_block_id), str(g_Sim_Entity_Running_States[baseline_block_id]))
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Processing - %s CANNOT be terminated! - %s [%s] is running!'
-                            % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_src), simgval.get_sim_code_str(baseline_block_id), str(g_Sim_Entity_Running_States[baseline_block_id])))
+        g_log_handler.error("[SimEvent] %s EVT_CODE (%s) Processing - %s CANNOT be terminated! - %s [%s] is running!" \
+                 % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_src), simgval.get_sim_code_str(baseline_block_id), str(g_Sim_Entity_Running_States[baseline_block_id])))
 
         # Send EVT_REJECT_SIMENTITY_TERMINATION to SRC BLOCK
         term_cfm_evt_code = simgval.gEVT_REJECT_SIMENTITY_TERMINATION
@@ -672,25 +612,15 @@ def SEH_evt_ask_simentity_termination (q_msg):
             # termination confirm - no timer events and baseline block already terminated.
 
             # Send gEVT_CONFIRM_SIMENTITY_TERMINATION to SRC BLOCK
-            print "[SimEvent] %s EVT_CODE (%s) Processing - %s CAN be terminated! - %s [%s] is stopped and %d Timer Event(s) remain(s)!" \
-                     % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_src), simgval.get_sim_code_str(baseline_block_id), str(g_Sim_Entity_Running_States[baseline_block_id]), no_of_tmr_evts)
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Processing - %s CAN be terminated! - %s [%s] is stopped and %d Timer Event(s) remain(s)!'
-                                % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_src), simgval.get_sim_code_str(baseline_block_id), str(g_Sim_Entity_Running_States[baseline_block_id]), no_of_tmr_evts))
+            g_log_handler.info("[SimEvent] %s EVT_CODE (%s) Processing - %s CAN be terminated! - %s [%s] is stopped and %d Timer Event(s) remain(s)!" \
+                     % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_src), simgval.get_sim_code_str(baseline_block_id), str(g_Sim_Entity_Running_States[baseline_block_id]), no_of_tmr_evts))
 
             term_cfm_evt_code = simgval.gEVT_CONFIRM_SIMENTITY_TERMINATION
         else:
 
-            """
-            clib.sim_clearscreen()
-            print Timer_Events
-            clib.sim_exit()
-            """
-
             # cannot be terminated --> timer events exits
-            print "[SimEvent] %s EVT_CODE (%s) Processing - %s CANNOT be terminated! - %d Timer Event(s) remain(s)" \
-                 % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_src), no_of_tmr_evts)
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Processing - %s CANNOT be terminated! - %d Timer Event(s) remain(s)'
-                            % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_src), no_of_tmr_evts))
+            g_log_handler.info("[SimEvent] %s EVT_CODE (%s) Processing - %s CANNOT be terminated! - %d Timer Event(s) remain(s)" \
+                 % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_src), no_of_tmr_evts))
 
             # Send EVT_REJECT_SIMENTITY_TERMINATION to SRC BLOCK
             term_cfm_evt_code = simgval.gEVT_REJECT_SIMENTITY_TERMINATION
@@ -699,10 +629,8 @@ def SEH_evt_ask_simentity_termination (q_msg):
     term_cfm_evt = clib.make_queue_event (Global_Curr_Sim_Clock, g_my_block_id, dst_block_id, term_cfm_evt_code, None, None)
     r = send_EVT_to_Block(term_cfm_evt_code, dst_block_id, term_cfm_evt)
     if r is not True:
-        print "[SimEvent] %s Timer Event Send Out Error!!! - %s," \
-              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(term_cfm_evt_code)), term_cfm_evt
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  Timer Event Send Out Error!!! - %s, %s'
-                  % (simgval.get_sim_code_str(term_cfm_evt_code), str(term_cfm_evt)))
+        g_log_handler.error("[SimEvent] %s Timer Event Send Out Error!!! - %s, %s" \
+              % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(term_cfm_evt_code), term_cfm_evt))
         clib.sim_exit()
 
     print "[SimEvent] %s OUT Sentout_Timer_Event_IDs => %s" % (str(Global_Curr_Sim_Clock), str(Sentout_Timer_Event_IDs))
@@ -716,43 +644,29 @@ def SEH_evt_clear_sd_tmr_event (q_msg):
     evt_data        = q_msg[6]  # EVT_DATA
 
     if evt_code != simgval.gEVT_REQ_CLEAR_SD_TMR_EVENT:
-        print "[SimEvent] %s EVT_CODE (%s) Error! => " % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) ERROR! - %s' % (simgval.get_sim_code_str(evt_code), str(q_msg)))
+        g_log_handler.error("[SimEvent] %s EVT_CODE (%s) Error! => %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
 
     if evt_real_src != simgval.gBLOCK_BROKER:
-        print "[SimEvent] %s EVT_CODE (%s) Error! - Invalid REAL SRC Block (%s) =>" \
-                 % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_real_src)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Error! - Invalid REAL SRC Block (%s) => %s'
-                            % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_real_src), str(q_msg)))
+        g_log_handler.error("[SimEvent] %s EVT_CODE (%s) Error! - Invalid REAL SRC Block (%s) => %s" \
+                 % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_real_src), q_msg))
         clib.sim_exit()
 
     vm_obj = evt_data[0]
     exception_flag = evt_data[1]
 
     if vm_obj.sd_policy_activated != True:
-        print "[SimEvent] %s EVT_CODE (%s) Error! - Invalid Access to Lib:SEH_evt_clear_sd_tmr_event =>" \
-                 % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Error! - Invalid Access to Lib:SEH_evt_clear_sd_tmr_event => %s'
-                            % (simgval.get_sim_code_str(evt_code), str(q_msg)))
-        clib.logwrite_vm_obj(g_log_handler, Global_Curr_Sim_Clock, vm_obj)
+        g_log_handler.error("[SimEvent] %s EVT_CODE (%s) Error! - Invalid Access to Lib:SEH_evt_clear_sd_tmr_event => %s" \
+                 % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
+        clib.logwrite_vm_obj(g_log_handler, "[SimEvent] " + str(Global_Curr_Sim_Clock), vm_obj)
         clib.sim_exit()
-
-    #display_Timer_Events_List ()
-    logwrite_Timer_Events_List(g_log_handler, "BEFORE " + simgval.get_sim_code_str(evt_code) + " RECV FOR VM-" + str(vm_obj.id))
-    clib.logwrite_vm_obj(g_log_handler, Global_Curr_Sim_Clock, vm_obj)
 
     index, te = get_index_Timer_Event_by_Infos (simgval.gBLOCK_BROKER, simgval.gEVT_SUB_VM_SCALE_DOWN, vm_obj.id)
     if index < 0 or te is None:
 
         # this case hardly happens but it exists -- no just warning instead of terminating simulator - 10/27/2014
-        print "[SimEvent] %s EVT_CODE (%s) Error! - Proper Timer Event for VM (ID:%d) Scale Down not found!!!" \
-                 % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm_obj.id)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Error! - Proper Timer Event for VM(ID:%d) Scale Down not found!!!'
-                            % (simgval.get_sim_code_str(evt_code), vm_obj.id))
-        #clib.sim_exit()
-
-
+        g_log_handler.error("[SimEvent] %s EVT_CODE (%s) Error! - Proper Timer Event for VM (ID:%d) Scale Down not found!!!" \
+                 % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), vm_obj.id))
 
     else:
 
@@ -767,22 +681,14 @@ def SEH_evt_clear_sd_tmr_event (q_msg):
             te_data[0]  != vm_obj.id or \
             index       <  0:
 
-            print "[SimEvent] %s EVT_CODE (%s) Error! - Timer Event (IDX:%d, EC:%s) for VM(ID:%d) Scale Down Mismatch!" \
+            g_log_handler.error("[SimEvent] %s EVT_CODE (%s) Error! - Timer Event (IDX:%d, EC:%s) for VM(ID:%d) Scale Down Mismatch!" \
                      % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code),
-                        index, simgval.get_sim_code_str(te_ec),vm_obj.id)
-            g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) Error! - Timer Event (IDX:%d, EC:%s) for VM(ID:%d) Scale Down Mismatch!'
-                                % (simgval.get_sim_code_str(evt_code), index, simgval.get_sim_code_str(te_ec),vm_obj.id))
+                        index, simgval.get_sim_code_str(te_ec),vm_obj.id))
             clib.sim_exit()
 
-
         remove_Timer_Event_by_Index (index)
-        print "[SimEvent] %s EVT_CODE (%s) - Remove Timer Event (IDX:%d, EC:%s) for VM(ID:%d) Scale Down" \
-                 % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), index, simgval.get_sim_code_str(te_ec),vm_obj.id)
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s) - Remove Timer Event (IDX:%d, EC:%s) for VM(ID:%d) Scale Down'
-                           % (simgval.get_sim_code_str(evt_code), index, simgval.get_sim_code_str(te_ec),vm_obj.id))
-
-        #display_Timer_Events_List ()
-        logwrite_Timer_Events_List(g_log_handler, "AFTER " + simgval.get_sim_code_str(evt_code) + " RECV FOR VM-" + str(vm_obj.id))
+        g_log_handler.error("[SimEvent] %s EVT_CODE (%s) - Remove Timer Event (IDX:%d, EC:%s) for VM(ID:%d) Scale Down" \
+                 % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), index, simgval.get_sim_code_str(te_ec),vm_obj.id))
 
         # send by pass to notify "request to clear sd event completed"
         seh_dst_block_id    = simgval.gBLOCK_BROKER
@@ -814,20 +720,16 @@ def SEH_event_processing (q_msg):
     evt_sub_code    = q_msg[5]  # EVT_SUB_CODE
     evt_data        = q_msg[6]  # EVT_DATA
 
-    print "\n\n[SimEvent] %s EVT_RECV : EC:%s, ESC:%s, SRC_BLOCK:%s, data:" \
-          % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), simgval.get_sim_code_str(evt_src)), evt_data
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  EVT_RECV - EC:%s, ESC: %s, SRC_BLOCK:%s, data: %s'
-             % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), simgval.get_sim_code_str(evt_src), str(evt_data)))
+    g_log_handler.info("\n\n[SimEvent] %s EVT_RECV : EC:%s, ESC:%s, SRC_BLOCK:%s, data:%s" \
+          % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), simgval.get_sim_code_str(evt_src), evt_data))
 
     print_bar()
-
     ret_vals = [False, None]
     if evt_code == simgval.gEVT_SET_CLOCK:
 
         # SET CLOCK Event Processing
         # ret_val is related to increase sim clock
         ret_vals = SEH_evt_set_clock_processing (q_msg)
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  SEH_evt_set_clock_processing returns = %s' %(str(ret_vals)))
 
     elif evt_code == simgval.gEVT_SET_TIMER:
 
@@ -838,10 +740,6 @@ def SEH_event_processing (q_msg):
 
         # EVT ACK PROCESSING
         ret_vals = SEH_evt_ack_processing (q_msg)
-
-        print ret_vals
-
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  SEH_evt_ack_processing returns = %s' %(str(ret_vals)))
 
     elif evt_code == simgval.gEVT_BYPASS:
 
@@ -864,8 +762,7 @@ def SEH_event_processing (q_msg):
         SEH_evt_clear_sd_tmr_event (q_msg)
 
     else:
-        print "[SimEvent] %s EVT_CODE (%s) Error! => " % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE ERROR! - %s' % str(q_msg))
+        g_log_handler.error("[SimEvent] %s EVT_CODE (%s) Error! => %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
 
     return ret_vals
@@ -910,7 +807,7 @@ def update_curr_sim_clock (clock):
     Global_Curr_Sim_Clock_CV.notify()
     Global_Curr_Sim_Clock_CV.release()
 
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  Update Global_Curr_Sim_Clock: %s' % str(Global_Curr_Sim_Clock))
+    #g_log_handler.info(str(Global_Curr_Sim_Clock) + '  Update Global_Curr_Sim_Clock: %s' % str(Global_Curr_Sim_Clock))
 
 def th_sim_event (my_block_id, conf_obj, q_in, q_clock, q_work_gen, q_broker, q_IaaS):
 
@@ -942,10 +839,10 @@ def th_sim_event (my_block_id, conf_obj, q_in, q_clock, q_work_gen, q_broker, q_
     init_sim_entity_running_state()
     time.sleep(random.random())
 
-    print "[SimEvent] Start Sim Event Thread!"
     log = set_log (g_sim_conf.log_path)
     g_log_handler = log
-    log.info('0' + '  Sim Event Processing Log Start...')
+
+    log.info ("[SimEvent] 0 Start Sim Event Thread!")
 
     # Timer_Event = [timeout, [DEST_BLOCK, EVT_SUB_CODE, EVT_DATA[]]]
     # if EVT_DATA [] is None -> create an evt before send.
@@ -969,10 +866,8 @@ def th_sim_event (my_block_id, conf_obj, q_in, q_clock, q_work_gen, q_broker, q_
         evt_dst = q_message[3]
 
         if evt_dst != my_block_id:
-            print "[SimEvent] EVT_MSG ERROR! (Wrong EVT_DST) - ", q_message
-            log.error(str(Global_Curr_Sim_Clock) + '  EVT_MSG ERROR! (Wrong EVT_DST) - %s' % str(q_message))
+            log.error("[SimEvent] %s EVT_MSG ERROR! (Wrong EVT_DST) - %s" % (Global_Curr_Sim_Clock, q_message))
             clib.sim_exit()
-            continue
 
         # Termination Processing
         if g_flag_sim_entity_term is True:

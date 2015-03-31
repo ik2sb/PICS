@@ -144,33 +144,33 @@ def display_vm_obj (clock, vm):
     print "[Comm.Lib] %d VM VScale Victim ID      = %d" % (clock, vm.vscale_victim_id)
     print "[Comm.Lib] %d -----------------------------------" % clock
 
-def logwrite_vm_obj (log_handler, clock, vm):
-    log_handler.info (str(clock) + "  Display VM Object" )
-    log_handler.info (str(clock) + "  ================================================================")
-    log_handler.info (str(clock) + "  VM ID                    = %d" % (vm.id))
-    log_handler.info (str(clock) + "  VM Instance ID           = %s" % (vm.instance_id))
-    log_handler.info (str(clock) + "  VM Type Name             = %s" % (vm.type_name))
-    log_handler.info (str(clock) + "  VM Unit Price            = %s" % (vm.unit_price))
-    log_handler.info (str(clock) + "  VM Status                = %s" % (simgval.get_sim_code_str(vm.status)))
-    log_handler.info (str(clock) + "  VM Time Create           = %s" % (str(vm.time_create)))
-    log_handler.info (str(clock) + "  VM Time Active           = %s" % (str(vm.time_active)))
-    log_handler.info (str(clock) + "  VM Time Terminate        = %s" % (str(vm.time_terminate)))
-    log_handler.info (str(clock) + "  VM Cost                  = %f" % (vm.cost))
-    log_handler.info (str(clock) + "  VM startup_lag           = %d" % (vm.startup_lag))
+def logwrite_vm_obj (log_handler, header, vm):
+    log_handler.info (str(header) + " Display VM Object" )
+    log_handler.info (str(header) + " ================================================================")
+    log_handler.info (str(header) + " VM ID                    = %d" % (vm.id))
+    log_handler.info (str(header) + " VM Instance ID           = %s" % (vm.instance_id))
+    log_handler.info (str(header) + " VM Type Name             = %s" % (vm.type_name))
+    log_handler.info (str(header) + " VM Unit Price            = %s" % (vm.unit_price))
+    log_handler.info (str(header) + " VM Status                = %s" % (simgval.get_sim_code_str(vm.status)))
+    log_handler.info (str(header) + " VM Time Create           = %s" % (str(vm.time_create)))
+    log_handler.info (str(header) + " VM Time Active           = %s" % (str(vm.time_active)))
+    log_handler.info (str(header) + " VM Time Terminate        = %s" % (str(vm.time_terminate)))
+    log_handler.info (str(header) + " VM Cost                  = %f" % (vm.cost))
+    log_handler.info (str(header) + " VM startup_lag           = %d" % (vm.startup_lag))
 
-    log_handler.info (str(clock) + "  ================================================================")
+    log_handler.info (str(header) + " ================================================================")
 
     if vm.current_job is not None:
-        log_handler.info (str(clock) + "  Current Job              = (ID:%d, NM:%s, ADR:%s (CPU:%s, I/O:%s), DL:%d, SDR:%d)"
+        log_handler.info (str(header) + " Current Job              = (ID:%d, NM:%s, ADR:%s (CPU:%s, I/O:%s), DL:%d, SDR:%d)"
                           % (vm.current_job.id, vm.current_job.name, vm.current_job.act_duration_on_VM, vm.current_job.act_cputime_on_VM, vm.current_job.act_nettime_on_VM, vm.current_job.deadline, vm.current_job.std_duration))
     else:
-        log_handler.info (str(clock) + "  Current Job              = %s" % (vm.current_job))
+        log_handler.info (str(header) + " Current Job              = %s" % (vm.current_job))
 
-    log_handler.info (str(clock) + "  VM Curr Job Start Clock  = %d" % (vm.current_job_start_clock))
-    log_handler.info (str(clock) + "  VM Last Job Compe Clock  = %d" % (vm.last_job_complete_clock))
+    log_handler.info (str(header) + " VM Curr Job Start Clock  = %d" % (vm.current_job_start_clock))
+    log_handler.info (str(header) + " VM Last Job Compe Clock  = %d" % (vm.last_job_complete_clock))
 
     if len(vm.job_queue) < 1:
-        log_handler.info (str(clock) + "  Job Queue                = None")
+        log_handler.info (str(header) + " Job Queue                = None")
     else:
         job_queue_list = []
         for job in vm.job_queue:
@@ -185,10 +185,10 @@ def logwrite_vm_obj (log_handler, clock, vm):
             job_info.append(job.time_create)
             job_queue_list.append (job_info)
 
-        log_handler.info (str(clock) + "  Job Queue                = %s" % (str(job_queue_list)))
+        log_handler.info (str(header) + " Job Queue                = %s" % (str(job_queue_list)))
 
     if len(vm.job_history) < 1:
-        log_handler.info (str(clock) + "  Job History              = None")
+        log_handler.info (str(header) + " Job History              = None")
     else:
         jh_list = []
         for jh in vm.job_history:
@@ -202,14 +202,14 @@ def logwrite_vm_obj (log_handler, clock, vm):
             jh_info.append(jh.std_duration)
             jh_info.append(jh.time_create)
             jh_list.append(jh_info)
-        log_handler.info (str(clock) + "  Job History              = %s" % (str(jh_list)))
+        log_handler.info (str(header) + " Job History              = %s" % (str(jh_list)))
 
-    log_handler.info (str(clock) + "  VM SD Policy Activated   = %s" % (vm.sd_policy_activated))
-    log_handler.info (str(clock) + "  VM SD Wait Time          = %d" % (vm.sd_wait_time))
-    log_handler.info (str(clock) + "  VM IS VScale Victim???   = %s" % (vm.is_vscale_victim))
-    log_handler.info (str(clock) + "  VM VM VScale Case        = %s" % (simgval.get_sim_code_str(vm.vscale_case)))
-    log_handler.info (str(clock) + "  VM VScale Victim ID      = %d" % (vm.vscale_victim_id))
-    log_handler.info (str(clock) + "  ================================================================")
+    log_handler.info (str(header) + " VM SD Policy Activated   = %s" % (vm.sd_policy_activated))
+    log_handler.info (str(header) + " VM SD Wait Time          = %d" % (vm.sd_wait_time))
+    log_handler.info (str(header) + " VM IS VScale Victim???   = %s" % (vm.is_vscale_victim))
+    log_handler.info (str(header) + " VM VM VScale Case        = %s" % (simgval.get_sim_code_str(vm.vscale_case)))
+    log_handler.info (str(header) + " VM VScale Victim ID      = %d" % (vm.vscale_victim_id))
+    log_handler.info (str(header) + " ================================================================")
 
 def display_job_obj (clock, job):
 
@@ -262,23 +262,23 @@ def display_JobList (clock, title, recv_jobs):
         seq += 1
     print "[Comm.Lib] %d ===================================" % clock
 
-def logwrite_JobList (log, clock, title, recv_jobs):
-    log.info(str(clock) + '  ===================================')
-    log.info(str(clock) + '  Display %s' % title)
-    log.info(str(clock) + '  ===================================')
+def logwrite_JobList (log, header, title, recv_jobs):
+    log.info(str(header) + ' ==============================================================')
+    log.info(str(header) + ' Display %s' % title)
+    log.info(str(header) + ' ==============================================================')
     seq = 0
     for recv_job in recv_jobs:
-        log.info(str(clock) + '  [%d] ID:%d, NM:%s, SDR:%d, DL:%d, ST:%s, TC:%s TA:%s, TS:%s, TE:%s, VM:%d, VMTY:%s, ADR:%d (CPU:%s, IO:%s)'
+        log.info(str(header) + ' [%d] ID:%d, NM:%s, SDR:%d, DL:%d, ST:%s, TC:%s TA:%s, TS:%s, TE:%s, VM:%d, VMTY:%s, ADR:%d (CPU:%s, IO:%s)'
                     %(seq, recv_job.id, recv_job.name, recv_job.std_duration, recv_job.deadline, simgval.get_sim_code_str(recv_job.status),
                  recv_job.time_create, recv_job.time_assign, recv_job.time_start, recv_job.time_complete,recv_job.VM_id, recv_job.VM_type, recv_job.act_duration_on_VM, recv_job.act_cputime_on_VM, recv_job.act_nettime_on_VM))
         seq += 1
-    log.info(str(clock) + '  ===================================')
+    log.info(str(header) + ' ==============================================================')
 
 def display_VM_Instances_List (clock, title, vms):
     print ""
-    print "[Comm.Lib] %d ===================================" % clock
+    print "[Comm.Lib] %d ==============================================================" % clock
     print "[Comm.Lib] %d Display %s" % (clock, title)
-    print "[Comm.Lib] %d ===================================" % clock
+    print "[Comm.Lib] %d ==============================================================" % clock
     seq = 0
     for vm in vms:
         print "[Comm.Lib] %d [%d] ID:%d, IID:%s, TY:%s, PR:$%sST:%s, TC:%s TA:%s TT:%s C$:%f, SL:%d, CJ:%s, NJ:%d, JH:%d" \
@@ -288,20 +288,20 @@ def display_VM_Instances_List (clock, title, vms):
                  vm.cost, vm.startup_lag, str(vm.current_job) if vm.current_job is None else 'JID: ' + str(vm.current_job.id), len(vm.job_queue), len(vm.job_history))
 
         seq += 1
-    print "[Comm.Lib] %d ===================================" % clock
+    print "[Comm.Lib] %d ==============================================================" % clock
 
-def logwrite_VM_Instance_Lists (log, clock, title, vms):
-    log.info(str(clock) + '  ===================================')
-    log.info(str(clock) + '  Display %s' % title)
-    log.info(str(clock) + '  ===================================')
+def logwrite_VM_Instance_Lists (log, header, title, vms):
+    log.info(str(header) + ' ==============================================================')
+    log.info(str(header) + ' Display %s' % title)
+    log.info(str(header) + ' ==============================================================')
     seq = 0
     for vm in vms:
-        log.info(str(clock) + '  [%d] ID:%d, IID:%s, TY:%s, PR:$%s, ST:%s, TC:%s TA:%s TT:%s C$:%f, SL:%d, CJ:%s, NJ:%d, JH:%d'
+        log.info(str(header) + ' [%d] ID:%d, IID:%s, TY:%s, PR:$%s, ST:%s, TC:%s TA:%s TT:%s C$:%f, SL:%d, CJ:%s, NJ:%d, JH:%d'
                     %(seq, vm.id, vm.instance_id, vm.type_name, vm.unit_price, simgval.get_sim_code_str(vm.status),
                      str(vm.time_create), str(vm.time_active), str(vm.time_terminate),
                      vm.cost, vm.startup_lag, str(vm.current_job), len(vm.job_queue), len(vm.job_history)))
         seq += 1
-    log.info(str(clock) + '  ===================================')
+    log.info(str(header) + ' ==============================================================')
 
 def print_loc():
     callerframerecord = inspect.stack()[1]    # 0 represents this line

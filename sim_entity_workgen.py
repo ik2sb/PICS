@@ -1,3 +1,4 @@
+import sys
 import time
 import math
 import logging
@@ -22,11 +23,19 @@ g_Workloads_CV = Condition()
 def set_log (path):
     logger = logging.getLogger('workload_generator')
     log_file = path + '/[' + str(g_my_block_id) + ']-workload_generator.log'
-    #hdlr = logging.FileHandler(path + '/workload_generator.log')
+
+    # for file log
     hdlr = logging.FileHandler(log_file)
     formatter = logging.Formatter('%(message)s')
     hdlr.setFormatter(formatter)
     logger.addHandler(hdlr)
+
+    # for stdout...
+    ch = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter('%(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
     logger.setLevel(logging.INFO)
     return logger
 
@@ -86,15 +95,6 @@ def generate_job_errors (error_prob):
         std_duration = job[2]
         job[8] = random.randint(1, std_duration)
 
-
-    # for debug
-    print ""
-    for i, j in enumerate(g_Workloads):
-
-        print "[%d] job = %s" % (i, j)
-
-    print ""
-
 def workgen_send_evt_ack (evt_id, evt_org_code):
 
     ack_evt = clib.make_queue_event (0, g_my_block_id, simgval.gBLOCK_SIM_EVENT_HANDLER, simgval.gEVT_ACK, evt_org_code, None)
@@ -127,8 +127,6 @@ def read_next_job_and_register_timer_event ():
         q_evt = clib.make_queue_event (timer, g_my_block_id, simgval.gBLOCK_SIM_EVENT_HANDLER, simgval.gEVT_SET_TIMER, simgval.gEVT_SUB_SEND_JOB, evt_data)
 
         gQ_OUT.put (q_evt)
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + '  Event Sent -  EC:%s, ESC: %s, DATA: %s'
-                           % (simgval.get_sim_code_str(q_evt[4]), simgval.get_sim_code_str(q_evt[5]), str(q_evt[6])))
     else:
 
         g_flag_sim_entity_term = True
@@ -136,8 +134,6 @@ def read_next_job_and_register_timer_event ():
         # Timer Event for Workload Gen Termination
         q_evt = clib.make_queue_event (1, g_my_block_id, simgval.gBLOCK_SIM_EVENT_HANDLER, simgval.gEVT_SET_TIMER, simgval.gEVT_SUB_WORKGEN_TERMINATE, None)
         gQ_OUT.put (q_evt)
-        g_log_handler.info(str(Global_Curr_Sim_Clock) + '  Event Sent -  EC:%s, ESC: %s, DATA: %s'
-                           % (simgval.get_sim_code_str(q_evt[4]), simgval.get_sim_code_str(q_evt[5]), str(q_evt[6])))
 
 def workgen_evt_sub_vm_wakeup_processing (q_msg):
 
@@ -148,8 +144,7 @@ def workgen_evt_sub_vm_wakeup_processing (q_msg):
     evt_sub_code    = q_msg[5]  # EVT_SUB_CODE
 
     if evt_sub_code != simgval.gEVT_SUB_WAKEUP:
-        print "[Work_Gen] %s workgen_evt_sub_vm_wakeup_processing EVT_CODE (EC:%s, ESC:%s) Error! => " %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + "  workgen_evt_sub_vm_wakeup_processing EVT_CODE (EC:%s, ESC:%s) Error - %s" % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), str(q_msg)))
+        g_log_handler.error("[Work_Gen] %s workgen_evt_sub_vm_wakeup_processing EVT_CODE (EC:%s, ESC:%s) Error! => %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), q_msg))
         clib.sim_exit()
 
     # read the first job from Workloads
@@ -168,8 +163,7 @@ def workgen_evt_sub_send_job_processing (q_msg):
     evt_data        = q_msg[6]  # EVT_DATA
 
     if evt_sub_code != simgval.gEVT_SUB_SEND_JOB:
-        print "[Work_Gen] %s workgen_evt_sub_send_job_processing EVT_CODE (EC:%s, ESC:%s) Error! => " %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + "  workgen_evt_sub_send_job_processing EVT_CODE (EC:%s, ESC:%s) Error - %s" % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), str(q_msg)))
+        g_log_handler.error("[Work_Gen] %s workgen_evt_sub_send_job_processing EVT_CODE (EC:%s, ESC:%s) Error! => %s" %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), q_msg))
         clib.sim_exit()
 
     qe_data =  [simgval.gEVT_WORK_GEN]
@@ -180,7 +174,6 @@ def workgen_evt_sub_send_job_processing (q_msg):
 
     g_joblog_handler.info ('%s\t%s\t%d\t%d\t%s\t%d\t%s\t%d\t\t%s'
                            % (str(Global_Curr_Sim_Clock), evt_data[0], evt_data[1], evt_data[2], simgval.get_sim_code_str(evt_data[3]), evt_data[4], simgval.get_sim_code_str(evt_data[5]), evt_data[6], evt_data[7]))
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  Event Sent - EC:%s, ESC:%s, DATA:%s' % (simgval.get_sim_code_str(q_evt[4]), simgval.get_sim_code_str(q_evt[5]), str(q_evt[6])))
 
     # read the next job
     read_next_job_and_register_timer_event ()
@@ -193,8 +186,7 @@ def workgen_evt_exp_timer_processing (q_msg):
     evt_sub_code    = q_msg[5]  # EVT_SUB_CODE
 
     if evt_code != simgval.gEVT_EXP_TIMER:
-        print "[Work_Gen] %s workgen_evt_exp_timer_processing EVT_CODE (%s) Error! => " %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  iaas_evt_exp_timer_processing EVT_CODE (%s) Error - %s' % (simgval.get_sim_code_str(evt_code), str(q_msg)))
+        g_log_handler.error("[Work_Gen] %s workgen_evt_exp_timer_processing EVT_CODE (%s) Error! => %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
 
     if evt_sub_code == simgval.gEVT_SUB_WAKEUP:
@@ -208,8 +200,7 @@ def workgen_evt_exp_timer_processing (q_msg):
         workgen_evt_sub_send_job_processing (q_msg)
 
     else:
-        print "[Work_Gen] %s EVT_SUB_CODE (%s) Error! => " % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_sub_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_SUB_CODE (%s) ERROR! - %s' % (simgval.get_sim_code_str(evt_sub_code), str(q_msg)))
+        g_log_handler.error("[Work_Gen] %s EVT_SUB_CODE (%s) Error! => %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_sub_code), q_msg))
         clib.sim_exit()
 
 def workgen_event_processing (q_msg):
@@ -218,19 +209,13 @@ def workgen_event_processing (q_msg):
     evt_sub_code    = q_msg[5]  # EVT_SUB_CODE
     evt_data        = q_msg[6]  # EVT_DATA
 
-    print "\n\n[Work_Gen] %s Event Received : EC:%s, ESC:%s, SRC_BLOCK:%s, data:" \
-          % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), simgval.get_sim_code_str(evt_src)), evt_data
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  Receive Event - EC:%s, ESC: %s, SRC_BLOCK:%s, data: %s'
-             % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), simgval.get_sim_code_str(evt_src), str(evt_data)))
-
     if evt_code == simgval.gEVT_EXP_TIMER:
 
         # workload timer event processing
         workgen_evt_exp_timer_processing (q_msg)
 
     else:
-        print "[Work_Gen] %s EVT_CODE (%s) Error! => " % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE ERROR! - %s' % str(q_msg))
+        g_log_handler.error("[Work_Gen] %s EVT_CODE (%s) Error! => %s" % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
 
 def terminate_sim_entity_workloadgen (q_msg):
@@ -240,10 +225,8 @@ def terminate_sim_entity_workloadgen (q_msg):
     evt_sub_code    = q_msg[5]  # EVT_SUB_CODE
 
     if evt_code != simgval.gEVT_EXP_TIMER or evt_sub_code != simgval.gEVT_SUB_WORKGEN_TERMINATE:
-        print "[Work_Gen] %s EVT_CODE (%s)/EVT_SUB_CODE (%s) Error! => " \
-              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code)), q_msg
-        g_log_handler.error(str(Global_Curr_Sim_Clock) + '  EVT_CODE (%s)/EVT_SUB_CODE (%s) Error! - %s'
-                            % (simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), str(q_msg)))
+        g_log_handler.error("[Work_Gen] %s EVT_CODE (%s)/EVT_SUB_CODE (%s) Error! => %s" \
+              %(str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), q_msg))
         clib.sim_exit()
 
     # [a] ack send first
@@ -266,7 +249,7 @@ def update_curr_sim_clock (clock):
     Global_Curr_Sim_Clock_CV.notify()
     Global_Curr_Sim_Clock_CV.release()
 
-    g_log_handler.info(str(Global_Curr_Sim_Clock) + '  Update Global_Curr_Sim_Clock: %s' % str(Global_Curr_Sim_Clock))
+    #g_log_handler.info(str(Global_Curr_Sim_Clock) + '  Update Global_Curr_Sim_Clock: %s' % str(Global_Curr_Sim_Clock))
 
 def th_sim_entity_workgen(my_block_id, conf_obj, q_in, q_out):
 
@@ -285,11 +268,9 @@ def th_sim_entity_workgen(my_block_id, conf_obj, q_in, q_out):
 
     time.sleep(random.random())
 
-    print "[Work_Gen] Start Workload Generator Thread!"
     log = set_log (conf_obj.log_path)
     g_log_handler = log
-
-    log.info('0' + '  Workload Generator Log Start...')
+    log.info ("[Work_Gen] 0 Start Workload Generator Thread!")
 
     job_log = set_job_log (conf_obj.log_path)
     g_joblog_handler = job_log
@@ -321,25 +302,6 @@ def th_sim_entity_workgen(my_block_id, conf_obj, q_in, q_out):
             job.extend(data)
             insert_job_into_Workloads (job)
 
-            """
-            if no_of_jobs == 1:
-                print " ---------------------------------------------------------------------------------------"
-                print " JSEQ\tJN\tCL\tSDR\tDL\tIFD\t\tIFS\tOFD\t\tOFS"
-                print " ---------------------------------------------------------------------------------------"
-
-            #print g_Workloads
-            print " " + str(no_of_jobs) \
-                  + "\t" + g_Workloads[no_of_jobs-1][0] \
-                  + "\t" + str(g_Workloads[no_of_jobs-1][1]) \
-                  + "\t" + str(g_Workloads[no_of_jobs-1][2]) \
-                  + "\t" + str(g_Workloads[no_of_jobs-1][3]) \
-                  + "\t" + simgval.get_sim_code_str(g_Workloads[no_of_jobs-1][4]) \
-                  + "\t" + str(g_Workloads[no_of_jobs-1][5]) \
-                  + "\t" + simgval.get_sim_code_str(g_Workloads[no_of_jobs-1][6]) \
-                  + "\t" + str(g_Workloads[no_of_jobs-1][7])
-            """
-
-    #print " ---------------------------------------------------------------------------------------\n"
 
     log.info('0' + '  Read Workload - %d Jobs' % no_of_jobs)
 
@@ -382,10 +344,8 @@ def th_sim_entity_workgen(my_block_id, conf_obj, q_in, q_out):
         evt_dst = q_message[3]      # DST BLOCK
 
         if evt_dst != my_block_id:
-            print "[Work_Gen] EVT_MSG ERROR! (Wrong EVT_DST) - ", q_message
-            log.error(str(Global_Curr_Sim_Clock) + '  EVT_MSG ERROR! (Wrong EVT_DST) - %s' % str(q_message))
+            log.error ("[Work_Gen] 0 EVT_MSG ERROR! (Wrong EVT_DST) - %s" % (q_message))
             clib.sim_exit()
-            continue
 
         if evt_src == simgval.gBLOCK_SIM_EVENT_HANDLER:
 
@@ -394,8 +354,7 @@ def th_sim_entity_workgen(my_block_id, conf_obj, q_in, q_out):
 
         else:
             # event received only from sim event handler
-            print "[Work_Gen] EVT_MSG ERROR! (Wrong EVT_SRC) - ", q_message
-            log.error(str(Global_Curr_Sim_Clock) + '  EVT_MSG ERROR! (Wrong EVT_SRC) - %s' % str(q_message))
+            log.error("[Work_Gen] 0 EVT_MSG ERROR! (Wrong EVT_SRC) - %s" % (q_message))
             clib.sim_exit()
             continue
 
@@ -407,3 +366,4 @@ def th_sim_entity_workgen(my_block_id, conf_obj, q_in, q_out):
         workgen_event_processing (q_message)
 
     print "[Work_Gen] %d Workload Generator Terminated." % (Global_Curr_Sim_Clock)
+
