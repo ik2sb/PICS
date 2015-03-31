@@ -168,4 +168,4 @@ ENABLE_VERTICAL_SCALING=NO
 #               (triggered  when VM meets deadline - find most suitable one
 #               for queued jobs (e.g. cheapest VM with deadline satisfaction)
 # VSCALE-BOTH : Both VScale-up/down
-VERTICAL_SCALING_OPERATION=VSCALE-BOTH # Vertical Scaling Operation Options
+VERTICAL_SCALING_OPERATION=VSCALE-BOTH
