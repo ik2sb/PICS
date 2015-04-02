@@ -335,9 +335,7 @@ def th_sim_entity_workgen(my_block_id, conf_obj, q_in, q_out):
     while True:
         q_message = q_in.get()
         q_in.task_done()
-
         time.sleep(0.01)
-        #print "\n[Work_Gen] %s Queue Message  :" % str(Global_Curr_Sim_Clock), q_message
 
         evt_clock = q_message[1]    # EVT_SIMULATION_CLOCK
         evt_src = q_message[2]      # SRC BLOCK
@@ -356,7 +354,6 @@ def th_sim_entity_workgen(my_block_id, conf_obj, q_in, q_out):
             # event received only from sim event handler
             log.error("[Work_Gen] 0 EVT_MSG ERROR! (Wrong EVT_SRC) - %s" % (q_message))
             clib.sim_exit()
-            continue
 
         if g_flag_sim_entity_term is True:
             terminate_sim_entity_workloadgen (q_message)

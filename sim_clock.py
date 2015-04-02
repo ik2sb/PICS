@@ -1,5 +1,5 @@
-import time
 import sys
+import time
 import os
 import random
 import logging
@@ -17,11 +17,18 @@ g_log_handler = None
 def set_log (path):
     logger = logging.getLogger('sim_clock')
     log_file = path + '/[' + str(g_my_block_id) + ']-sim_clock.log'
+
     hdlr = logging.FileHandler(log_file)
-    #hdlr = logging.FileHandler(path + '/sim_clock.log')
     formatter = logging.Formatter('%(message)s')
     hdlr.setFormatter(formatter)
     logger.addHandler(hdlr)
+
+    # for stdout...
+    ch = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter('%(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
     logger.setLevel(logging.INFO)
     return logger
 
@@ -38,11 +45,10 @@ def sim_clock_evt_sim_start_processing (q_msg):
 
     evt_code = q_msg[4]
     if evt_code != simgval.gEVT_SIM_START:
-        print "[SimClock] %s sim_clock_evt_sim_start_processing EVT_CODE (%s) Error! => " %(str(Global_Wall_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Wall_Clock) + '  sim_clock_evt_sim_start_processing EVT_CODE (%s) Error - %s' % (simgval.get_sim_code_str(evt_code), str(q_msg)))
+        g_log_handler.error("[SimClock] %s sim_clock_evt_sim_start_processing EVT_CODE (%s) Error! => %s" %(str(Global_Wall_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
 
-    print "[SimClock] Simulation Start..."
+    g_log_handler.info("[SimClock] %s Simulation Start..." % (Global_Wall_Clock))
 
     # send msg to sim_evt_handler ==> Wake up event for simulation event handler
     q_evt = clib.make_queue_event (Global_Wall_Clock, g_my_block_id, simgval.gBLOCK_SIM_EVENT_HANDLER, simgval.gEVT_SET_CLOCK, None, None)
@@ -56,12 +62,10 @@ def sim_clock_evt_sim_end_processing (q_msg):
     evt_code = q_msg[4]
 
     if evt_code != simgval.gEVT_SIM_END:
-        print "[SimClock] %s sim_clock_evt_sim_end_processing EVT_CODE (%s) Error! => " %(str(Global_Wall_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Wall_Clock) + '  sim_clock_evt_sim_end_processing EVT_CODE (%s) Error - %s' % (simgval.get_sim_code_str(evt_code), str(q_msg)))
+        g_log_handler.error("[SimClock] %s sim_clock_evt_sim_end_processing EVT_CODE (%s) Error! => %s" %(str(Global_Wall_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
 
-    print "[SimClock] %s EVT_RECV: %s" % (str(Global_Wall_Clock), simgval.get_sim_code_str(evt_code))
-    g_log_handler.info(str(Global_Wall_Clock) + '  EVT_RECV: %s' % (simgval.get_sim_code_str(evt_code)))
+    g_log_handler.info("[SimClock] %s EVT_RECV: %s" % (str(Global_Wall_Clock), simgval.get_sim_code_str(evt_code)))
 
     # simulation complete event
     sim_end_evt = clib.make_queue_event (Global_Wall_Clock, g_my_block_id, simgval.gBLOCK_SIM_EVENT_HANDLER, simgval.gEVT_SIM_END, None, None)
@@ -76,8 +80,7 @@ def sim_clock_evt_set_clock_ack_processing (q_msg):
     evt_data = q_msg[6]
 
     if evt_code != simgval.gEVT_SET_CLOCK_ACK:
-        print "[SimClock] %s sim_clock_evt_sim_ack_processing EVT_CODE (%s) Error! => " %(str(Global_Wall_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Wall_Clock) + '  sim_clock_evt_sim_ack_processing EVT_CODE (%s) Error - %s' % (simgval.get_sim_code_str(evt_code), str(q_msg)))
+        g_log_handler.error("[SimClock] %s sim_clock_evt_sim_ack_processing EVT_CODE (%s) Error! => %s" %(str(Global_Wall_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
 
     if Global_Wall_Clock == (evt_clock):
@@ -92,15 +95,10 @@ def sim_clock_evt_set_clock_ack_processing (q_msg):
         q_evt = clib.make_queue_event (Global_Wall_Clock, g_my_block_id, simgval.gBLOCK_SIM_EVENT_HANDLER, simgval.gEVT_SET_CLOCK, tick, None)
         gQ_OUT.put(q_evt)
 
-
-
-        #time.sleep(4)
-
     else:
-        print "[SimClock] Simulation Clock Mismatch: SIM_TIMER:%ds, SIM_EVENT_HANDLER:%ds" \
-              % (Global_Wall_Clock, evt_clock)
-        g_log_handler.error(str(Global_Wall_Clock) + '  Simulation Clock Mismatch: SIM_TIMER:%ds, SIM_EVENT_HANDLER:%ss'
-                            % (Global_Wall_Clock, str(evt_clock)))
+
+        g_log_handler.error("[SimClock] Simulation Clock Mismatch: SIM_TIMER:%ds, SIM_EVENT_HANDLER:%ds" \
+              % (Global_Wall_Clock, evt_clock))
         clib.sim_exit()
 
 def sim_clock_event_processing (q_msg):
@@ -125,8 +123,7 @@ def sim_clock_event_processing (q_msg):
         sim_clock_evt_set_clock_ack_processing (q_msg)
 
     else:
-        print "[SimClock] %s EVT_CODE (%s) Error! => " % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code)), q_msg
-        g_log_handler.error(str(Global_Wall_Clock) + '  EVT_CODE ERROR! - %s' % str(q_msg))
+        g_log_handler.error("[SimClock] %s EVT_CODE (%s) Error! => %s" % (str(Global_Wall_Clock), simgval.get_sim_code_str(evt_code), q_msg))
         clib.sim_exit()
 
     return ret_val
@@ -145,10 +142,8 @@ def th_sim_clock (my_block_id, conf_obj, q_in, q_evt_handler):
         gQ_OUT = q_evt_handler
 
     time.sleep(random.random())
-
-    print "[SimClock] Start Sim Clock Thread!"
     log = set_log (conf_obj.log_path)
-    log.info(str(Global_Wall_Clock) + '  Sim Clock Log Start...')
+    log.info("[SimClock] %s Start Sim Clock Thread!..." % (Global_Wall_Clock))
     g_log_handler = log
 
     while True:

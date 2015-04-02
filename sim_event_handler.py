@@ -720,7 +720,8 @@ def SEH_event_processing (q_msg):
     evt_sub_code    = q_msg[5]  # EVT_SUB_CODE
     evt_data        = q_msg[6]  # EVT_DATA
 
-    g_log_handler.info("\n\n[SimEvent] %s EVT_RECV : EC:%s, ESC:%s, SRC_BLOCK:%s, data:%s" \
+    print  "\n\n"
+    g_log_handler.info("[SimEvent] %s EVT_RECV : EC:%s, ESC:%s, SRC_BLOCK:%s, data:%s" \
           % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), simgval.get_sim_code_str(evt_src), evt_data))
 
     print_bar()

@@ -2222,7 +2222,8 @@ def broker_event_processing (q_msg):
     evt_sub_code    = q_msg[5]  # EVT_SUB_CODE
     evt_data        = q_msg[6]  # EVT_DATA
 
-    g_log_handler.info("\n\n[Broker__] %s EVT_RECV - EC:%s, ESC:%s, SRC_BLOCK:%s" \
+    print "\n\n"
+    g_log_handler.info("[Broker__] %s EVT_RECV - EC:%s, ESC:%s, SRC_BLOCK:%s" \
           % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), simgval.get_sim_code_str(evt_src)))
     if evt_code == simgval.gEVT_EXP_TIMER:
 
@@ -2291,7 +2292,8 @@ def broker_term_event_processing (q_msg):
     if evt_code != simgval.gEVT_CONFIRM_SIMENTITY_TERMINATION and evt_code != simgval.gEVT_REJECT_SIMENTITY_TERMINATION:
         return False
 
-    g_log_handler.info("\n\n[Broker__] %s EVT_RECV - EC:%s, ESC:%s, SRC_BLOCK:%s" \
+    print "\n\n"
+    g_log_handler.info("[Broker__] %s EVT_RECV - EC:%s, ESC:%s, SRC_BLOCK:%s" \
           % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), simgval.get_sim_code_str(evt_src)))
     ret_val = False
     if evt_code == simgval.gEVT_CONFIRM_SIMENTITY_TERMINATION:

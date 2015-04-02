@@ -1380,7 +1380,8 @@ def iaas_event_processing (q_msg):
     evt_sub_code    = q_msg[5]  # EVT_SUB_CODE
     evt_data        = q_msg[6]  # EVT_DATA
 
-    g_log_handler.info("\n\n[IaaS____] %s EVT_RECV : EC:%s, ESC:%s, SRC_BLOCK:%s, data:%s" \
+    print "\n\n"
+    g_log_handler.info("[IaaS____] %s EVT_RECV : EC:%s, ESC:%s, SRC_BLOCK:%s, data:%s" \
           % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), simgval.get_sim_code_str(evt_src), evt_data))
 
     if evt_code == simgval.gEVT_EXP_TIMER:
@@ -1436,11 +1437,7 @@ def iaas_term_event_processing (q_msg):
     if evt_code != simgval.gEVT_CONFIRM_SIMENTITY_TERMINATION and evt_code != simgval.gEVT_REJECT_SIMENTITY_TERMINATION:
         return False
 
-    print "\n\n[IaaS____] %s EVT_RECV - EC:%s, ESC:%s, SRC_BLOCK:%s" \
-          % (str(Global_Curr_Sim_Clock), simgval.get_sim_code_str(evt_code), simgval.get_sim_code_str(evt_sub_code), simgval.get_sim_code_str(evt_src))
-
     ret_val = False
-
     if evt_code == simgval.gEVT_CONFIRM_SIMENTITY_TERMINATION:
         g_log_handler.info("[IaaS____] %s IaaS Terminated - TERM FLAG:%s, EVT:%s" \
               % (str(Global_Curr_Sim_Clock), str(g_flag_sim_entity_term), simgval.get_sim_code_str(evt_code)))
@@ -1700,9 +1697,6 @@ def th_sim_entity_iaas_cloud (my_block_id, config_obj, q_in, q_out):
         q_message = q_in.get()
         q_in.task_done()
 
-        #time.sleep (0.01) duplicate message issue (08062014)
-        #print "\n[IaaS____] Queue Message  :", q_message
-
         evt_clock = q_message[1]    # EVT_SIMULATION_CLOCK
         evt_src = q_message[2]      # SRC BLOCK
         evt_dst = q_message[3]      # DST BLOCK
@@ -1729,4 +1723,4 @@ def th_sim_entity_iaas_cloud (my_block_id, config_obj, q_in, q_out):
         iaas_event_processing (q_message)
 
     iaas_generate_report()
-    print "\n\n[IaaS____] %s IaaS Cloud Terminated." % (str(Global_Curr_Sim_Clock))
+    print "[IaaS____] %s IaaS Cloud Terminated." % (str(Global_Curr_Sim_Clock))
