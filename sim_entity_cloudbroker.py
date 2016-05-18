@@ -3645,6 +3645,7 @@ def run_SD_JAT_AR_policy (vm_id):
                 if p < 1:
                     g_log_handler.error("[Broker__] %s VM (ID:%d) AR(%d) Error!, Samples => %s" % (str(Global_Curr_Sim_Clock), vm_id, p, y))
                     ar_result = 1
+                    break
 
         bounds = get_vm_wait_time_bounds()
         timer = validate_prediction_result (ar_result, bounds)
@@ -3696,6 +3697,7 @@ def run_SD_JAT_ARMA_policy (vm_id):
                     
                     g_log_handler.error("[Broker__] %s VM (ID:%d) ARMA(%d, %d) Error!, Samples => %s" % (str(Global_Curr_Sim_Clock), vm_id, p, q, y))
                     arma_result = 1
+                    break
 
         bounds = get_vm_wait_time_bounds()
         timer = validate_prediction_result (arma_result, bounds)
@@ -3748,9 +3750,9 @@ def run_SD_JAT_ARIMA_policy (vm_id):
                 else:
                     p -= 1 
                 if p < 1 and d < 1 and q < 1:
-
                     g_log_handler.error("[Broker__] %s VM (ID:%d) ARIMA(%d, %d, %d) Error!, Samples => %s" % (str(Global_Curr_Sim_Clock), vm_id, p, d, q, y))
                     arima_result = 1
+                    break
 
         bounds = get_vm_wait_time_bounds()
         timer = validate_prediction_result (arima_result, bounds)

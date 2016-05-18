@@ -137,7 +137,7 @@ VM_SCALE_DOWN_POLICY_RECENT_SAMPLE_CNT=50
 # F.6 First Parameter for Timeseries.
 #     alpha for WMA, ES, HWDES, BRDES: 0 < alpha < 1
 #     p for AR, ARMA, ARIMA (p >= 0)
-VM_SCALE_DOWN_POLICY_PARAM1=0.5 # First parameter for Timeseries
+VM_SCALE_DOWN_POLICY_PARAM1=0.5
 
 # F.7 Second Parameter for Timeseries.
 #     beta for HWDES (0 < beta < 1)
